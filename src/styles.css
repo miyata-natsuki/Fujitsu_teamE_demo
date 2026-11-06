@@ -1,4 +1,82 @@
 @import "tailwindcss";
+.allergy-impact {
+  margin: 14px 0;
+  padding: 14px;
+  background: #fff4f0;
+  border-radius: 10px;
+}
+.allergy-impact-heading,
+.allergy-impact-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+}
+.allergy-impact-heading b {
+  font-size: 22px;
+  color: #ac4939;
+}
+.allergy-impact-bar {
+  height: 6px;
+  background: #eaded9;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.allergy-impact-bar span {
+  display: block;
+  height: 100%;
+  background: #cc6c55;
+}
+.allergy-impact-row {
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.photo-upload-list {
+  display: grid;
+  gap: 16px;
+}
+.photo-upload {
+  display: flex;
+  gap: 20px;
+  padding: 18px 0;
+  align-items: flex-start;
+}
+.photo-upload > img {
+  width: 150px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+.photo-upload > div {
+  flex: 1;
+  min-width: 0;
+}
+.photo-upload .field {
+  margin-top: 12px;
+}
+.photo-upload .field span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.photo-upload input {
+  max-width: 100%;
+}
+@media (max-width: 600px) {
+  .photo-upload {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .photo-upload > img {
+    width: 100%;
+    height: 180px;
+  }
+  .photo-upload > div {
+    width: 100%;
+  }
+}
 @theme {
   --color-coral: #ee6850;
   --color-ink: #292e2b;
@@ -3002,5 +3080,72 @@ p {
   }
   .groups-page .inline-title {
     gap: 20px;
+  }
+}
+
+.language-switcher {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #e4e5dd;
+  border-radius: 12px;
+  padding: 8px 10px;
+  color: #636b60;
+}
+.language-switcher select {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  max-width: 100px;
+  cursor: pointer;
+  outline: none;
+}
+.language-switcher:focus-within {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+}
+html[lang="en"] .site-header nav {
+  gap: 20px;
+}
+html[lang="en"] .site-header nav a {
+  font-size: 12px;
+}
+html[lang="en"] .brand small {
+  font-size: 10px;
+}
+html[lang="en"] .search-bar {
+  border-radius: 28px;
+}
+html[lang="en"] .group-card-actions .button {
+  font-size: 11px;
+}
+html[lang="en"] .mini-steps {
+  gap: 12px;
+}
+@media (max-width: 700px) {
+  .language-switcher {
+    padding: 6px;
+    gap: 0;
+  }
+  .language-switcher svg {
+    display: none;
+  }
+  .language-switcher select {
+    width: 78px;
+    font-size: 11px;
+  }
+  .header-actions .demo-pill {
+    display: none;
+  }
+  .header-actions {
+    gap: 6px;
+  }
+  .registration-steps li {
+    font-size: 10px;
+  }
+  .language-switcher + .reset-button {
+    display: none;
   }
 }

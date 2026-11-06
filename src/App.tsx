@@ -1,3 +1,4 @@
+import { useLocale } from "./hooks/useLocale";
 import {
   useEffect,
   useState,
@@ -23,6 +24,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { LanguageSwitcher } from "./hooks/useLocale";
 import { StoreProvider, useStore } from "./hooks/useStore";
 import SearchPage from "./pages/Search";
 import {
@@ -36,6 +38,7 @@ import Detail, { Decision } from "./pages/Detail";
 import RestaurantForm from "./pages/RestaurantForm";
 import { Empty, Modal } from "./components/ui";
 function Shell() {
+  const { t } = useLocale();
   const { error, reset } = useStore();
   const [resetOpen, setResetOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -50,7 +53,7 @@ function Shell() {
     <>
       <header className="site-header">
         <div className="header-inner">
-          <Link className="brand" to="/" aria-label="mogu ホーム">
+          <Link className="brand" to="/" aria-label={t("mogu ホーム")}>
             <svg viewBox="0 0 36 36" aria-hidden="true">
               <path
                 d="M4 12v12c0 5 7 5 7 0V14c0-5 7-5 7 0v10c0 5 7 5 7 0V14c0-5 7-5 7 0v14"
@@ -60,26 +63,27 @@ function Shell() {
                 strokeLinecap="round"
               />
             </svg>
-            <span>mogu</span>
-            <small>みんなで、おいしく。</small>
+            <span>{t("mogu")}</span>
+            <small>{t("みんなで、おいしく。")}</small>
           </Link>
           <nav className={menuOpen ? "open" : ""}>
             <NavLink to="/" end>
               <Utensils size={17} />
-              お店を探す
+              {t("お店を探す")}
             </NavLink>
             <NavLink to="/groups">
               <Users size={17} />
-              マイグループ
+              {t("マイグループ")}
             </NavLink>
-            <NavLink to="/restaurants/new">店舗の方へ</NavLink>
+            <NavLink to="/restaurants/new">{t("店舗の方へ")}</NavLink>
           </nav>
           <div className="header-actions">
-            <span className="demo-pill">DEMO</span>
+            <LanguageSwitcher />
+            <span className="demo-pill">{t("DEMO")}</span>
             <button
               className="icon-button reset-button"
-              aria-label="デモデータをリセット"
-              title="デモデータをリセット"
+              aria-label={t("デモデータをリセット")}
+              title={t("デモデータをリセット")}
               onClick={() => setResetOpen(true)}
             >
               <RotateCcw size={18} />
@@ -87,13 +91,13 @@ function Shell() {
             <Link
               className="profile-button"
               to="/profile"
-              aria-label="自分のプロフィール"
+              aria-label={t("自分のプロフィール")}
             >
               <UserRound size={19} />
             </Link>
             <button
               className="icon-button mobile-nav-button"
-              aria-label="メニュー"
+              aria-label={t("メニュー")}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen(!menuOpen)}
             >
@@ -103,21 +107,23 @@ function Shell() {
         </div>
       </header>
       <main className="main-container">
-        {error && (
-          <div className="notice" role="alert">
-            <p>{error}</p>
-            <button className="text-link" onClick={() => setResetOpen(true)}>
-              リセット
-            </button>
-          </div>
+        {t(
+          error && (
+            <div className="notice" role="alert">
+              <p>{t(error)}</p>
+              <button className="text-link" onClick={() => setResetOpen(true)}>
+                {t("リセット")}
+              </button>
+            </div>
+          ),
         )}
         {resetDone && (
           <div className="green-notice" role="status">
             <Check size={17} />
-            初期データに戻しました。
+            {t("初期データに戻しました。")}
             <button
               className="icon-button"
-              aria-label="通知を閉じる"
+              aria-label={t("通知を閉じる")}
               onClick={() => setResetDone(false)}
             >
               <X size={15} />
@@ -147,27 +153,30 @@ function Shell() {
       </main>
       <footer className="site-footer">
         <Link className="footer-brand" to="/">
-          mogu<span>みんなの「食べたい」が、ひとつになる。</span>
+          {t("mogu")}
+          <span>{t("みんなの「食べたい」が、ひとつになる。")}</span>
         </Link>
-        <span>ハッカソンデモ · 店舗・人物・情報は架空です</span>
+        <span>{t("ハッカソンデモ · 店舗・人物・情報は架空です")}</span>
         <button className="text-link" onClick={() => setResetOpen(true)}>
-          初期データにリセット
+          {t("初期データにリセット")}
         </button>
       </footer>
       {resetOpen && (
         <Modal
-          title="デモを初期状態に戻しますか？"
+          title={t("デモを初期状態に戻しますか？")}
           onClose={() => setResetOpen(false)}
         >
           <p>
-            追加・編集したグループ、プロフィール、店舗とお店の決定を削除し、20店舗・4人の初期データに戻します。
+            {t(
+              "追加・編集したグループ、プロフィール、店舗とお店の決定を削除し、20店舗・4人の初期データに戻します。",
+            )}
           </p>
           <div className="form-actions">
             <button
               className="button secondary"
               onClick={() => setResetOpen(false)}
             >
-              キャンセル
+              {t("キャンセル")}
             </button>
             <button
               className="button primary"
@@ -179,7 +188,7 @@ function Shell() {
                 }
               }}
             >
-              初期状態に戻す
+              {t("初期状態に戻す")}
             </button>
           </div>
         </Modal>
@@ -188,8 +197,12 @@ function Shell() {
   );
 }
 class ErrorBoundary extends Component<
-  { children: ReactNode },
-  { hasError: boolean }
+  {
+    children: ReactNode;
+  },
+  {
+    hasError: boolean;
+  }
 > {
   state = { hasError: false };
   static getDerivedStateFromError() {
@@ -199,36 +212,41 @@ class ErrorBoundary extends Component<
     console.error(error, info.componentStack);
   }
   render() {
-    if (this.state.hasError)
-      return (
-        <div className="empty">
-          <h1>画面を表示できませんでした</h1>
-          <p>
-            保存データに問題がある可能性があります。再読み込みするか、デモデータをリセットしてください。
-          </p>
-          <button
-            className="button secondary"
-            onClick={() => window.location.reload()}
-          >
-            再読み込み
-          </button>
-          <button
-            className="button primary"
-            onClick={() => {
-              if (window.confirm("デモの保存データを削除しますか？")) {
-                localStorage.removeItem("mogu-demo-v1");
-                window.location.reload();
-              }
-            }}
-          >
-            データをリセット
-          </button>
-        </div>
-      );
-    return this.props.children;
+    return this.state.hasError ? <ErrorFallback /> : this.props.children;
   }
 }
+function ErrorFallback() {
+  const { t } = useLocale();
+  return (
+    <div className="empty">
+      <h1>{t("画面を表示できませんでした")}</h1>
+      <p>
+        {t(
+          "保存データに問題がある可能性があります。再読み込みするか、デモデータをリセットしてください。",
+        )}
+      </p>
+      <button
+        className="button secondary"
+        onClick={() => window.location.reload()}
+      >
+        {t("再読み込み")}
+      </button>
+      <button
+        className="button primary"
+        onClick={() => {
+          if (window.confirm(t("デモの保存データを削除しますか？"))) {
+            localStorage.removeItem("mogu-demo-v1");
+            window.location.reload();
+          }
+        }}
+      >
+        {t("データをリセット")}
+      </button>
+    </div>
+  );
+}
 export default function App() {
+  const { t } = useLocale();
   return (
     <ErrorBoundary>
       <StoreProvider>

@@ -1,3 +1,4 @@
+import { TRANSLATIONS } from "./translations";
 import { ALLERGENS, INGREDIENTS } from "../data/constants";
 const aliases: Record<string, string[]> = {
   egg: ["たまご", "卵", "玉子"],
@@ -22,8 +23,8 @@ const normalize = (s: string) =>
     .replace(/\s/g, "");
 export function foodSearchMatch(id: string, label: string, query: string) {
   const key = ALLERGENS.find(([, name]) => name === label)?.[0] ?? id;
-  return [label, ...(aliases[key] ?? [])].some((s) =>
-    normalize(s).includes(normalize(query)),
+  return [label, ...(aliases[key] ?? []), ...(TRANSLATIONS[label] ?? [])].some(
+    (s) => normalize(s).includes(normalize(query)),
   );
 }
 export type ExtractedProduct = {
@@ -74,14 +75,16 @@ function menuIngredients(text: string) {
   let remaining = normalize(text);
   const found = new Set<string>();
   // Longest names first: 玉ねぎ must not also become ねぎ.
-  for (const ingredient of [...INGREDIENTS].sort((a,b)=>b.length-a.length)) {
+  for (const ingredient of [...INGREDIENTS].sort(
+    (a, b) => b.length - a.length,
+  )) {
     const key = normalize(ingredient);
     if (remaining.includes(key)) {
       found.add(ingredient);
       remaining = remaining.replaceAll(key, "");
     }
   }
-  return INGREDIENTS.filter(ingredient=>found.has(ingredient));
+  return INGREDIENTS.filter((ingredient) => found.has(ingredient));
 }
 export function parseMenuText(text: string) {
   return parseFoodText(text)

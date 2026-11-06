@@ -6,6 +6,34 @@ import type {
   ExcludedRestaurant,
 } from "../types";
 import { SCORE_WEIGHTS as W, allergenLabel } from "../data/constants";
+export function allergyImpact(restaurant: Restaurant, members: UserProfile[]) {
+  const allergies = [...new Set(members.flatMap((member) => member.allergies))];
+  const menus = restaurant.menus.map((menu) => ({
+    menu,
+    confirmed: menu.allergenReviewStatus === "confirmed",
+    allergens:
+      menu.allergenReviewStatus === "confirmed"
+        ? allergies.filter((id) => menu.allergens.includes(id))
+        : [],
+  }));
+  const total = menus.length;
+  const affected = menus.filter((entry) => entry.allergens.length > 0).length;
+  const unconfirmed = menus.filter((entry) => !entry.confirmed).length;
+  const allergens = allergies
+    .map((id) => ({
+      id,
+      count: menus.filter((entry) => entry.allergens.includes(id)).length,
+    }))
+    .filter((entry) => entry.count > 0);
+  return {
+    affected,
+    total,
+    unconfirmed,
+    percent: total ? Math.round((affected / total) * 100) : 0,
+    allergens,
+    menus,
+  };
+}
 export function scoreMenu(
   menu: MenuItem,
   member: UserProfile,
