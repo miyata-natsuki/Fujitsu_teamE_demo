@@ -1,0 +1,86 @@
+export const ALLERGENS = [
+  ["egg", "卵"],
+  ["milk", "乳"],
+  ["wheat", "小麦"],
+  ["buckwheat", "そば"],
+  ["peanut", "落花生"],
+  ["shrimp", "えび"],
+  ["crab", "かに"],
+  ["walnut", "くるみ"],
+  ["soy", "大豆"],
+  ["sesame", "ごま"],
+  ["beef", "牛肉"],
+  ["pork", "豚肉"],
+  ["chicken", "鶏肉"],
+] as const;
+export const INGREDIENTS = [
+  "牛肉",
+  "豚肉",
+  "鶏肉",
+  "魚",
+  "チーズ",
+  "トマト",
+  "きのこ",
+  "野菜",
+  "えび",
+  "じゃがいも",
+  "米",
+  "豆腐",
+  "玉ねぎ",
+  "パクチー",
+  "卵",
+  "牛乳",
+  "小麦",
+  "そば",
+  "落花生",
+  "かに",
+  "くるみ",
+  "大豆",
+  "ごま",
+  "にんじん",
+  "ピーマン",
+  "なす",
+  "ブロッコリー",
+  "ほうれん草",
+  "ねぎ",
+  "にんにく",
+  "レバー",
+  "納豆",
+  "いか",
+  "たこ",
+  "貝",
+  "アボカド",
+];
+export const CUISINES = [
+  "和食",
+  "洋食",
+  "中華",
+  "イタリアン",
+  "韓国料理",
+  "焼肉",
+  "寿司",
+  "カフェ",
+  "エスニック",
+];
+export const AREAS = ["渋谷", "新宿", "池袋"];
+export const BUDGETS = [2000, 3000, 4000, 5000, 8000];
+export const SCORE_WEIGHTS = {
+  base: 50,
+  likedIngredient: 15,
+  dislikedIngredient: -20,
+  likedIngredientCap: 30,
+  dislikedIngredientCap: 40,
+  likedCuisine: 15,
+  dislikedCuisine: -15,
+  average: 0.7,
+  minimum: 0.3,
+};
+export const STATUS_LABELS = {
+  used: "使用あり",
+  not_used: "不使用確認済み",
+  unknown: "未確認",
+};
+export const allergenLabel = (id: string) =>
+  ALLERGENS.find((a) => a[0] === id)?.[1] ?? id;
+export const SAFETY_NOTICE =
+  "架空データを使ったデモです。登録情報は安全性を保証しません。意図しない混入の可能性もあるため、実際の利用時には必ず店舗へ確認してください。";
