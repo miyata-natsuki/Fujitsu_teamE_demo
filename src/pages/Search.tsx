@@ -1,3 +1,4 @@
+import { useLocale } from "../hooks/useLocale";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -19,11 +20,12 @@ import {
   Check,
   Plus,
 } from "lucide-react";
-import { GroupCards } from "../components/GroupCards";
 import { useStore } from "../hooks/useStore";
+import { AllergyImpact } from "../components/AllergyImpact";
+import { ForceDecideButton } from "../components/ForceDecideButton";
 import { AREAS, BUDGETS, CUISINES, allergenLabel } from "../data/constants";
 import { matchRestaurants } from "../lib/matching";
-import { Avatar, RestaurantCard, Notice, Empty, yen } from "../components/ui";
+import { RestaurantCard, Notice, Empty, yen } from "../components/ui";
 const cuisineIcons = [
   Fish,
   Utensils,
@@ -36,6 +38,7 @@ const cuisineIcons = [
   Leaf,
 ];
 export default function SearchPage({ home = false }: { home?: boolean }) {
+  const { t } = useLocale();
   const { data, update } = useStore();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -59,8 +62,12 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
     (m) => !cuisine || m.restaurant.cuisine === cuisine,
   );
   const allergies = [...new Set(members.flatMap((m) => m.allergies))];
-  const choose = (id: string) => {
-    if (!group || !result.matches.some((m) => m.restaurant.id === id)) return;
+  const choose = (id: string, force = false) => {
+    if (
+      !group ||
+      (!force && !result.matches.some((m) => m.restaurant.id === id))
+    )
+      return;
     if (
       update((d) => ({
         ...d,
@@ -84,87 +91,47 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
       <section className={`search-intro ${home ? "home-intro" : ""}`}>
         <div>
           <div className="eyebrow">
-            <span />A TABLE FOR EVERYONE
+            <span />
+            {t("A TABLE FOR EVERYONE")}
           </div>
           <h1>
-            {home ? (
-              <>
-                おいしい時間を、
-                <br className="mobile-break" />
-                <span>みんなで。</span>
-              </>
-            ) : (
-              "みんなの「好き」で、お店を探そう。"
+            {t(
+              home ? (
+                <>
+                  {t("おいしい時間を、")}
+                  <br className="mobile-break" />
+                  <span>{t("みんなで。")}</span>
+                </>
+              ) : (
+                "みんなの「好き」で、お店を探そう。"
+              ),
             )}
           </h1>
           <p>
-            アレルギーも、好き嫌いも。みんなの食の好みから、ぴったりの一軒を。
+            {t(
+              "アレルギーも、好き嫌いも。みんなの食の好みから、ぴったりの一軒を。",
+            )}
           </p>
         </div>
-        <Link className="intro-group" to="/groups">
-          <div className="avatar-stack">
-            {(group?.members ?? data.groups[0]?.members ?? [])
-              .slice(0, 4)
-              .map((m, i) => (
-                <Avatar name={m.nickname} index={i} key={m.id} />
-              ))}
-          </div>
-          <div>
-            <span className="small muted">マイグループ</span>
-            <strong>{data.groups.length}つのグループ</strong>
-            <span className="small">グループ一覧を見る</span>
-          </div>
-          <ChevronDown size={16} />
-        </Link>
       </section>
-      {home && (
-        <section className="home-groups" aria-label="マイグループ一覧">
-          <div className="section-heading">
-            <div>
-              <h2>
-                マイグループ{" "}
-                <span className="count-badge">{data.groups.length}</span>
-              </h2>
-              <p className="small muted">
-                ごはん会を選んで、お店探しをはじめよう。
-              </p>
-            </div>
-            <Link className="text-link" to="/groups">
-              一覧を見る →
-            </Link>
-          </div>
-          {data.groups.length ? (
-            <GroupCards
-              groups={[...data.groups].reverse()}
-              restaurants={data.restaurants}
-            />
-          ) : (
-            <p className="muted">まだグループがありません。</p>
-          )}
-          <Link className="home-new-group" to="/groups/new">
-            <Plus size={18} />
-            新しいグループを作る
-          </Link>
-        </section>
-      )}
-      <div className="mode-tabs" aria-label="検索モード">
+      <div className="mode-tabs" aria-label={t("検索モード")}>
         <button
           className={!personal ? "active" : ""}
           onClick={() => setMode("group")}
         >
           <Users size={18} />
-          みんなで探す
+          {t("みんなで探す")}
         </button>
         <button
           className={personal ? "active" : ""}
           onClick={() => setMode("personal")}
         >
           <UserRound size={18} />
-          ひとりで探す
+          {t("ひとりで探す")}
         </button>
         <Link className="quick-group-link" to="/groups/new">
           <Plus size={17} />
-          新しいグループを作る
+          {t("新しいグループを作る")}
         </Link>
       </div>
       <form
@@ -183,15 +150,17 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
         <label>
           <MapPin size={20} />
           <div>
-            <span>エリア</span>
+            <span>{t("エリア")}</span>
             <select
-              aria-label="エリア"
+              aria-label={t("エリア")}
               value={area}
               onChange={(e) => setArea(e.target.value)}
             >
-              <option value="">すべてのエリア</option>
+              <option value="">{t("すべてのエリア")}</option>
               {AREAS.map((a) => (
-                <option key={a}>{a}</option>
+                <option key={a} value={a}>
+                  {t(a)}
+                </option>
               ))}
             </select>
           </div>
@@ -199,15 +168,16 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
         <label>
           <Utensils size={20} />
           <div>
-            <span>予算・1人あたり</span>
+            <span>{t("予算・1人あたり")}</span>
             <select
-              aria-label="予算上限"
+              aria-label={t("予算上限")}
               value={budget}
               onChange={(e) => setBudget(Number(e.target.value))}
             >
               {BUDGETS.map((b) => (
                 <option key={b} value={b}>
-                  {yen(b)}まで
+                  {t(yen(b))}
+                  {t("まで")}
                 </option>
               ))}
             </select>
@@ -216,14 +186,15 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
         <label>
           <Users size={20} />
           <div>
-            <span>{personal ? "プロフィール" : "グループ"}</span>
+            <span>{t(personal ? "プロフィール" : "グループ")}</span>
             {personal ? (
               <Link className="search-profile" to="/profile">
-                {data.profile.nickname}の食の好み
+                {data.profile.nickname}
+                {t("の食の好み")}
               </Link>
             ) : (
               <select
-                aria-label="検索するグループ"
+                aria-label={t("検索するグループ")}
                 value={selectedGroup ?? ""}
                 onChange={(e) =>
                   setParams((p) => {
@@ -235,7 +206,10 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
               >
                 {data.groups.map((g) => (
                   <option value={g.id} key={g.id}>
-                    {g.name} · {g.members.length}人
+                    {g.name}
+                    {t("·")}
+                    {g.members.length}
+                    {t("人")}
                   </option>
                 ))}
               </select>
@@ -244,15 +218,19 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
         </label>
         <button className="button primary search-submit">
           <SearchIcon size={19} />
-          お店を探す
+          {t("お店を探す")}
         </button>
       </form>
       <div className="search-safety">
         <ShieldCheck size={17} />
         <p>
-          {members.length}人のアレルギーを検索に反映
+          {members.length}
+          {t("人のアレルギーを検索に反映")}
           {allergies.length > 0 && (
-            <span>：{allergies.map(allergenLabel).join("・")}</span>
+            <span>
+              {t("：")}
+              {t(allergies.map(allergenLabel).join("・"))}
+            </span>
           )}
         </p>
         <Link
@@ -264,7 +242,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
                 : "/groups/new"
           }
         >
-          食の好みを確認
+          {t("食の好みを確認")}
         </Link>
       </div>
       <div className="cuisine-row">
@@ -273,7 +251,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           onClick={() => setCuisine("")}
         >
           <Utensils size={25} />
-          <span>すべて</span>
+          <span>{t("すべて")}</span>
         </button>
         {CUISINES.map((c, i) => {
           const Icon = cuisineIcons[i];
@@ -284,7 +262,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
               onClick={() => setCuisine(c)}
             >
               <Icon size={25} />
-              <span>{c}</span>
+              <span>{t(c)}</span>
             </button>
           );
         })}
@@ -293,22 +271,31 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
         <div className="section-heading">
           <div>
             <h2>
-              {personal ? "あなた" : "みんな"}におすすめのお店
-              <span className="result-count">{matches.length}件</span>
+              {t(
+                personal ? "あなたにおすすめのお店" : "みんなにおすすめのお店",
+              )}
+              <span className="result-count">
+                {matches.length}
+                {t("件")}
+              </span>
             </h2>
             <p>
-              {appliedArea || "すべてのエリア"} · {yen(appliedBudget)}まで ·
-              登録されたアレルギー条件に一致
+              {t(appliedArea || "すべてのエリア")}
+              {t("·")}
+              {t(yen(appliedBudget))}
+              {t("まで · 登録されたアレルギー条件に一致")}
             </p>
           </div>
           <span className="sort-label">
             <SlidersHorizontal size={16} />
-            おすすめ度順
+            {t("おすすめ度順")}
           </span>
         </div>
         {searched && (
           <div className="sr-only" role="status">
-            検索が完了しました。おすすめは{matches.length}件です。
+            {t("検索が完了しました。おすすめは")}
+            {matches.length}
+            {t("件です。")}
           </div>
         )}
         {matches.length > 0 ? (
@@ -324,13 +311,15 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
             ))}
           </div>
         ) : (
-          <Empty title="条件に一致するお店がありません">
+          <Empty title={t("条件に一致するお店がありません")}>
             <p>
-              アレルギー条件は緩和せず、エリアや予算、ジャンルを変更して探してください。
+              {t(
+                "アレルギー条件は緩和せず、エリアや予算、ジャンルを変更して探してください。",
+              )}
             </p>
             {!members.length && (
               <Link to="/groups/new" className="text-link">
-                グループを作成
+                {t("グループを作成")}
               </Link>
             )}
           </Empty>
@@ -341,34 +330,54 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           <summary>
             <span>
               <ShieldCheck size={20} />
-              <strong>候補から除外したお店</strong>
-              <span className="tag neutral">{result.excluded.length}件</span>
+              <strong>{t("候補から除外したお店")}</strong>
+              <span className="tag neutral">
+                {result.excluded.length}
+                {t("件")}
+              </span>
             </span>
             <ChevronDown size={19} />
           </summary>
           <p className="muted small">
-            使用あり・未確認のアレルゲンは、メニューや好みの点数に関係なく候補から除外します。
+            {t(
+              "使用あり・未確認のアレルゲンは、メニューや好みの点数に関係なく候補から除外します。",
+            )}
           </p>
           <div className="excluded-grid">
             {result.excluded.map(({ restaurant: r, reasons }) => (
               <div key={r.id}>
-                <Link to={`/restaurants/${r.id}`}>
+                <Link
+                  to={`/restaurants/${r.id}${!personal && group ? `?group=${group.id}` : ""}`}
+                >
                   <strong>{r.name}</strong>
                 </Link>
+                <AllergyImpact restaurant={r} members={members} />
                 {reasons.map((reason) => (
-                  <p key={reason}>{reason}</p>
+                  <p key={reason}>{t(reason)}</p>
                 ))}
+                {!personal && group && (
+                  <ForceDecideButton
+                    name={r.name}
+                    reasons={reasons}
+                    onConfirm={() => choose(r.id, true)}
+                  />
+                )}
               </div>
             ))}
           </div>
+          <p className="small muted">
+            {t(
+              "割合は全メニューのうち、参加者の登録アレルギーに該当する確認済みメニューの品数です。複数のアレルギーに該当しても1品として数えます。未確認のメニューは分母に含み、該当数には含めません。店舗全体の使用状況による除外は維持します。",
+            )}
+          </p>
         </details>
       )}
       <div className="bottom-links">
         <Link to="/groups/new">
           <Plus size={17} />
-          新しいグループを作る
+          {t("新しいグループを作る")}
         </Link>
-        <Link to="/restaurants/new">飲食店の方へ · 店舗を登録する</Link>
+        <Link to="/restaurants/new">{t("飲食店の方へ · 店舗を登録する")}</Link>
       </div>
       <Notice compact />
     </>

@@ -1,3 +1,4 @@
+import { useLocale } from "../hooks/useLocale";
 import { useState } from "react";
 import { ShieldCheck, Leaf, Check } from "lucide-react";
 import type { UserProfile } from "../types";
@@ -22,6 +23,7 @@ export function ProfileForm({
   onSave: (profile: UserProfile) => void;
   submitLabel?: string;
 }) {
+  const { t } = useLocale();
   const [profile, setProfile] = useState<UserProfile>(
     initial ? structuredClone(initial) : blankProfile,
   );
@@ -53,23 +55,23 @@ export function ProfileForm({
       <div className="mini-steps">
         <span className={step === 0 ? "active" : ""}>
           <ShieldCheck size={16} />
-          1. アレルギー
+          {t("1. アレルギー")}
         </span>
         <span className={step === 1 ? "active" : ""}>
           <Leaf size={16} />
-          2. 食の好み
+          {t("2. 食の好み")}
         </span>
       </div>
       {step === 0 ? (
         <>
           <label className="field">
-            ニックネーム
+            {t("ニックネーム")}
             <input
               autoFocus
               required
               maxLength={24}
               value={profile.nickname}
-              placeholder="例：あかり"
+              placeholder={t("例：あかり")}
               onChange={(e) =>
                 setProfile((p) => ({ ...p, nickname: e.target.value }))
               }
@@ -79,31 +81,35 @@ export function ProfileForm({
           <section className="form-section">
             <h3>
               <ShieldCheck size={20} />
-              アレルギー
+              {t("アレルギー")}
             </h3>
             <p>
-              該当するものをすべて選んでください。好き嫌いとは別に、お店を絞り込む必須条件として使います。
+              {t(
+                "該当するものをすべて選んでください。好き嫌いとは別に、お店を絞り込む必須条件として使います。",
+              )}
             </p>
             <IngredientPicker
-              label="アレルギー食材"
+              label={t("アレルギー食材")}
               options={ALLERGENS}
               selected={profile.allergies}
               onChange={(v) => set("allergies", v)}
             />
             <p className="small muted">
-              選択なしは「登録なし」として扱います。
+              {t("選択なしは「登録なし」として扱います。")}
             </p>
           </section>
           <div className="notice compact">
-            デモ用の架空プロフィールを入力してください。実際の個人情報・医療情報は登録しないでください。
+            {t(
+              "デモ用の架空プロフィールを入力してください。実際の個人情報・医療情報は登録しないでください。",
+            )}
           </div>
         </>
       ) : (
         <>
           <section className="form-section">
-            <h3>好きな食材</h3>
+            <h3>{t("好きな食材")}</h3>
             <IngredientPicker
-              label="好きな食材"
+              label={t("好きな食材")}
               allowSelectAll
               options={INGREDIENTS}
               selected={profile.likedIngredients}
@@ -112,9 +118,9 @@ export function ProfileForm({
             />
           </section>
           <section className="form-section">
-            <h3>苦手な食材</h3>
+            <h3>{t("苦手な食材")}</h3>
             <IngredientPicker
-              label="苦手な食材"
+              label={t("苦手な食材")}
               options={INGREDIENTS}
               selected={profile.dislikedIngredients}
               onChange={(v) => set("dislikedIngredients", v)}
@@ -122,12 +128,12 @@ export function ProfileForm({
             />
           </section>
           <section className="form-section">
-            <h3>好きな料理ジャンル</h3>
+            <h3>{t("好きな料理ジャンル")}</h3>
             <SelectionActions
               options={CUISINES}
               selected={profile.likedCuisines}
               onChange={(v) => set("likedCuisines", v)}
-              label="好きな料理ジャンル"
+              label={t("好きな料理ジャンル")}
             />
             <Tags
               options={CUISINES}
@@ -137,7 +143,7 @@ export function ProfileForm({
             />
           </section>
           <section className="form-section">
-            <h3>苦手な料理ジャンル</h3>
+            <h3>{t("苦手な料理ジャンル")}</h3>
             <Tags
               options={CUISINES}
               selected={profile.dislikedCuisines}
@@ -146,7 +152,7 @@ export function ProfileForm({
             />
           </section>
           <p className="small muted">
-            同じ項目は「好き」「苦手」のいずれかに登録できます。
+            {t("同じ項目は「好き」「苦手」のいずれかに登録できます。")}
           </p>
         </>
       )}
@@ -157,17 +163,19 @@ export function ProfileForm({
             className="button secondary"
             onClick={() => setStep(0)}
           >
-            戻る
+            {t("戻る")}
           </button>
         )}
         <button className="button primary" type="submit">
-          {step === 0 ? (
-            "食の好みへ進む"
-          ) : (
-            <>
-              <Check size={17} />
-              {submitLabel}
-            </>
+          {t(
+            step === 0 ? (
+              "食の好みへ進む"
+            ) : (
+              <>
+                <Check size={17} />
+                {t(submitLabel)}
+              </>
+            ),
           )}
         </button>
       </div>

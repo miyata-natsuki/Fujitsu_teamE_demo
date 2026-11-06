@@ -1,3 +1,4 @@
+import { useLocale } from "../hooks/useLocale";
 import { useId, useState } from "react";
 import { Search, X } from "lucide-react";
 import { Tags, SelectionActions } from "./ui";
@@ -17,6 +18,7 @@ export function IngredientPicker({
   tone?: string;
   allowSelectAll?: boolean;
 }) {
+  const { t } = useLocale();
   const [query, setQuery] = useState("");
   const id = useId();
   const entries = options.map((o) => (typeof o === "string" ? [o, o] : [...o]));
@@ -32,21 +34,23 @@ export function IngredientPicker({
             options={entries.map(([value]) => value)}
             selected={selected}
             onChange={onChange}
-            label={label}
+            label={t(label)}
           />
           <p className="small muted">
-            全選択は、検索条件に関係なくすべての食材を選びます。同じ食材の苦手登録は解除されます。
+            {t(
+              "全選択は、検索条件に関係なくすべての食材を選びます。同じ食材の苦手登録は解除されます。",
+            )}
           </p>
         </>
       )}
       <label className="ingredient-search" htmlFor={id}>
         <Search size={18} />
         <input
-          aria-label={`${label}を検索`}
+          aria-label={t(`${label}を検索`)}
           id={id}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={`${label}を検索（例：えび、たまご）`}
+          placeholder={t(`${label}を検索（例：えび、たまご）`)}
           autoComplete="off"
         />
       </label>
@@ -57,14 +61,18 @@ export function IngredientPicker({
               type="button"
               key={value}
               onClick={() => onChange(selected.filter((v) => v !== value))}
-              aria-label={`${entries.find((e) => e[0] === value)?.[1] ?? value}を解除`}
+              aria-label={t(
+                `${entries.find((e) => e[0] === value)?.[1] ?? value}を解除`,
+              )}
             >
-              {entries.find((e) => e[0] === value)?.[1] ?? value}
+              {t(entries.find((e) => e[0] === value)?.[1] ?? value)}
               <X size={14} />
             </button>
           ))
         ) : (
-          <span className="small muted">未選択 · 下の候補から追加できます</span>
+          <span className="small muted">
+            {t("未選択 · 下の候補から追加できます")}
+          </span>
         )}
       </div>
       <Tags
@@ -75,9 +83,11 @@ export function IngredientPicker({
       />
       {!filtered.length && (
         <p className="small muted">
-          {entries.every(([value]) => selected.includes(value))
-            ? "すべての食材を選択しています。"
-            : "該当する未選択の食材がありません。検索語を変えてください。"}
+          {t(
+            entries.every(([value]) => selected.includes(value))
+              ? "すべての食材を選択しています。"
+              : "該当する未選択の食材がありません。検索語を変えてください。",
+          )}
         </p>
       )}
     </div>

@@ -1,3 +1,4 @@
+import { useLocale } from "../hooks/useLocale";
 import {
   Link,
   useNavigate,
@@ -17,6 +18,7 @@ import {
 import { useStore } from "../hooks/useStore";
 import { allergenLabel } from "../data/constants";
 import { matchRestaurants } from "../lib/matching";
+import { ForceDecideButton } from "../components/ForceDecideButton";
 import {
   AllergenPanel,
   Empty,
@@ -26,18 +28,19 @@ import {
   yen,
 } from "../components/ui";
 export default function Detail() {
+  const { t } = useLocale();
   const { id } = useParams();
   const [params] = useSearchParams();
   const { data, update } = useStore();
   const navigate = useNavigate();
   const r = data.restaurants.find((r) => r.id === id);
   const group = data.groups.find((g) => g.id === params.get("group"));
-  if (!r) return <Empty title="お店が見つかりません" />;
+  if (!r) return <Empty title={t("お店が見つかりません")} />;
   const members = group?.members ?? [data.profile];
   const result = matchRestaurants([r], members, "", Infinity);
   const match = result.matches[0];
-  const choose = () => {
-    if (!group || !match) return;
+  const choose = (force = false) => {
+    if (!group || (!match && !force)) return;
     if (
       update((d) => ({
         ...d,
@@ -54,102 +57,119 @@ export default function Detail() {
         to={group ? `/search?group=${group.id}` : "/search?mode=personal"}
         className="back-link"
       >
-        お店一覧へ戻る
+        {t("お店一覧へ戻る")}
       </Link>
       <div className="detail-heading">
         <div className="eyebrow">
-          {r.area} · {r.cuisine}
+          {t(r.area)}
+          {t("·")}
+          {t(r.cuisine)}
         </div>
         <h1>{r.name}</h1>
         <div className="detail-meta">
           <span>
             <Star size={17} fill="currentColor" />
-            {r.rating} <small>（架空の口コミ）</small>
+            {r.rating} <small>{t("（架空の口コミ）")}</small>
           </span>
           <span>
             <MapPin size={17} />
-            {r.area}
+            {t(r.area)}
           </span>
-          <span>{yen(r.price)} / 人</span>
+          <span>
+            {t(yen(r.price))}
+            {t("/ 人")}
+          </span>
         </div>
       </div>
       <div className="detail-photos">
-        <FoodImage src={r.images[0]} alt={`${r.name}の料理写真（イメージ）`} />
-        <FoodImage src={r.images[1]} alt="料理のイメージ写真" />
+        <FoodImage
+          src={r.images[0]}
+          alt={t(`${r.name}の料理写真（イメージ）`)}
+        />
+        <FoodImage src={r.images[1]} alt={t("料理のイメージ写真")} />
       </div>
       <p className="photo-caption">
-        料理写真はイメージです。料理・店舗・口コミ・原材料情報はすべてデモ用です。
+        {t(
+          "料理写真はイメージです。料理・店舗・口コミ・原材料情報はすべてデモ用です。",
+        )}
       </p>
       <div className="detail-columns">
         <div>
           <section className="detail-section">
-            <h2>季節のおいしさを、気負わずに。</h2>
-            <p>{r.description}</p>
+            <h2>{t("季節のおいしさを、気負わずに。")}</h2>
+            <p>{t(r.description)}</p>
             <p className="with-icon muted">
               <Clock size={18} />
-              {r.openingHours}
+              {t(r.openingHours)}
             </p>
           </section>
           <section className="detail-section">
             <div className="section-heading">
               <h2>
                 <ShieldCheck size={22} />
-                店舗全体のアレルゲン情報
+                {t("店舗全体のアレルゲン情報")}
               </h2>
               <Link
                 className="text-link small"
                 to={`/restaurants/${r.id}/edit`}
               >
                 <Pencil size={14} />
-                編集
+                {t("編集")}
               </Link>
             </div>
             <p className="muted small">
-              メニューごとの情報と区別して、店舗全体での使用状況を表示しています。未登録の項目は「未確認」です。
+              {t(
+                "メニューごとの情報と区別して、店舗全体での使用状況を表示しています。未登録の項目は「未確認」です。",
+              )}
             </p>
             <AllergenPanel restaurant={r} />
             <div className="contact-note">
-              <strong>調理環境・交差接触について</strong>
-              <p>{r.crossContactInfo}</p>
+              <strong>{t("調理環境・交差接触について")}</strong>
+              <p>{t(r.crossContactInfo)}</p>
             </div>
             <Notice />
           </section>
           <section className="detail-section">
             <h2>
               <Utensils size={22} />
-              メニュー
+              {t("メニュー")}
             </h2>
             <div className="menu-list">
               {r.menus.map((menu) => (
                 <article className="menu-item" key={menu.id}>
                   <FoodImage
                     src={menu.image}
-                    alt={`${menu.name}（写真はイメージ）`}
+                    alt={t(`${menu.name}（写真はイメージ）`)}
                   />
                   <div>
                     <div className="menu-heading">
-                      <h3>{menu.name}</h3>
-                      <strong>{yen(menu.price)}</strong>
+                      <h3>{t(menu.name)}</h3>
+                      <strong>{t(yen(menu.price))}</strong>
                     </div>
-                    <p className="muted small">{menu.description}</p>
+                    <p className="muted small">{t(menu.description)}</p>
                     <p className="small">
-                      使用食材：{menu.ingredients?.join("・") || "未確認"}
+                      {t("使用食材：")}
+                      {t(menu.ingredients?.join("・") || "未確認")}
                     </p>
                     <div className="tags">
                       <span
                         className={`tag ${menu.allergenReviewStatus === "confirmed" ? "not_used" : "unknown"}`}
                       >
-                        {menu.allergenReviewStatus === "confirmed"
-                          ? "アレルゲン情報確認済み"
-                          : "アレルゲン情報未確認"}
+                        {t(
+                          menu.allergenReviewStatus === "confirmed"
+                            ? "アレルゲン情報確認済み"
+                            : "アレルゲン情報未確認",
+                        )}
                       </span>
                       {menu.allergens.map((a) => (
                         <span className="tag neutral" key={a}>
-                          {allergenLabel(a)}
+                          {t(allergenLabel(a))}
                         </span>
                       ))}
                       {!menu.allergens.length && (
-                        <span className="small muted">登録アレルゲンなし</span>
+                        <span className="small muted">
+                          {t("登録アレルゲンなし")}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -160,13 +180,18 @@ export default function Detail() {
           <section className="detail-section">
             <h2>
               <Star size={22} />
-              口コミ<span className="tag neutral">架空の体験談</span>
+              {t("口コミ")}
+              <span className="tag neutral">{t("架空の体験談")}</span>
             </h2>
             <p className="small muted">
-              口コミはアレルギー判定には使用しません。
+              {t("口コミはアレルギー判定には使用しません。")}
             </p>
             <div className="review-grid">
-              {r.reviews.length === 0 && <p className="small muted">このお店の架空口コミはまだ登録されていません。</p>}
+              {r.reviews.length === 0 && (
+                <p className="small muted">
+                  {t("このお店の架空口コミはまだ登録されていません。")}
+                </p>
+              )}
               {r.reviews.map((review) => (
                 <article key={review.id}>
                   <strong>{review.nickname}</strong>
@@ -174,7 +199,7 @@ export default function Detail() {
                     <Star size={13} fill="currentColor" />
                     {review.rating}
                   </span>
-                  <p>{review.text}</p>
+                  <p>{t(review.text)}</p>
                 </article>
               ))}
             </div>
@@ -182,14 +207,14 @@ export default function Detail() {
           <section className="detail-section">
             <h2>
               <MapPin size={22} />
-              お店の場所
+              {t("お店の場所")}
             </h2>
-            <p>{r.address}</p>
+            <p>{t(r.address)}</p>
             <div className="demo-map">
               <svg
                 viewBox="0 0 600 280"
                 role="img"
-                aria-label="架空の店舗位置を示すデモマップ"
+                aria-label={t("架空の店舗位置を示すデモマップ")}
               >
                 <rect width="600" height="280" fill="#f0eee8" />
                 <path
@@ -205,10 +230,11 @@ export default function Detail() {
                   strokeDasharray="8 5"
                 />
                 <text x="90" y="55" fill="#8b8b80" fontSize="14">
-                  こもれび通り
+                  {t("こもれび通り")}
                 </text>
                 <text x="435" y="225" fill="#8b8b80" fontSize="14">
-                  {r.area}駅（架空）
+                  {t(r.area)}
+                  {t("駅（架空）")}
                 </text>
                 <circle
                   cx={r.location.x * 6}
@@ -223,10 +249,10 @@ export default function Detail() {
                   fill="white"
                   fontSize="22"
                 >
-                  ●
+                  {t("●")}
                 </text>
               </svg>
-              <span>DEMO MAP · 実際の案内には使えません</span>
+              <span>{t("DEMO MAP · 実際の案内には使えません")}</span>
             </div>
           </section>
         </div>
@@ -235,48 +261,57 @@ export default function Detail() {
             <div className="with-icon">
               <Users size={20} />
               <strong>
-                {group?.name ?? `${data.profile.nickname}のおすすめ`}
+                {group?.name ?? t(`${data.profile.nickname}のおすすめ`)}
               </strong>
             </div>
             {match ? (
               <>
                 <div className="detail-score">
-                  <span>おすすめ度</span>
+                  <span>{t("おすすめ度")}</span>
                   <strong>
                     {match.score}
-                    <small>%</small>
+                    <small>{t("%")}</small>
                   </strong>
                 </div>
                 <p className="with-icon green-text">
                   <Check size={16} />
-                  登録されたアレルギー条件に一致
+                  {t("登録されたアレルギー条件に一致")}
                 </p>
                 <Recommendations match={match} />
                 {group ? (
                   <button
                     className="button primary full-width"
-                    onClick={choose}
+                    onClick={() => choose()}
                   >
-                    このお店に決定
+                    {t("このお店に決定")}
                   </button>
                 ) : (
                   <Link className="button primary full-width" to="/groups/new">
-                    グループを作って探す
+                    {t("グループを作って探す")}
                   </Link>
                 )}
               </>
             ) : (
               <>
-                <h3>検索候補から除外されています</h3>
+                <h3>{t("検索候補から除外されています")}</h3>
                 {result.excluded[0]?.reasons.map((reason) => (
                   <p className="small" key={reason}>
-                    {reason}
+                    {t(reason)}
                   </p>
                 ))}
+                {group && (
+                  <ForceDecideButton
+                    name={r.name}
+                    reasons={result.excluded[0]?.reasons ?? []}
+                    onConfirm={() => choose(true)}
+                  />
+                )}
               </>
             )}
             <p className="small muted">
-              おすすめ度は好みに基づく目安です。アレルギーの安全性を示す数値ではありません。
+              {t(
+                "おすすめ度は好みに基づく目安です。アレルギーの安全性を示す数値ではありません。",
+              )}
             </p>
           </div>
         </aside>
@@ -285,15 +320,16 @@ export default function Detail() {
   );
 }
 export function Decision() {
+  const { t } = useLocale();
   const { id } = useParams();
   const { data, update } = useStore();
   const group = data.groups.find((g) => g.id === id);
   const r = data.restaurants.find((r) => r.id === group?.selectedRestaurantId);
   if (!group || !r)
     return (
-      <Empty title="お店がまだ決まっていません">
+      <Empty title={t("お店がまだ決まっていません")}>
         <Link className="text-link" to={group ? `/search?group=${id}` : "/"}>
-          候補のお店を探す
+          {t("候補のお店を探す")}
         </Link>
       </Empty>
     );
@@ -304,33 +340,42 @@ export function Decision() {
         <span className="success-circle">
           <Check size={30} />
         </span>
-        <div className="eyebrow">OUR NEXT TABLE</div>
-        <h1>次のごはんは、ここに決まり。</h1>
+        <div className="eyebrow">{t("OUR NEXT TABLE")}</div>
+        <h1>{t("次のごはんは、ここに決まり。")}</h1>
         <p>
-          {group.name} · {group.members.length}人
+          {group.name}
+          {t("·")}
+          {group.members.length}
+          {t("人")}
         </p>
       </div>
       <div className="decision-card">
-        <FoodImage src={r.images[0]} alt={`${r.name}（写真はイメージ）`} />
+        <FoodImage src={r.images[0]} alt={t(`${r.name}（写真はイメージ）`)} />
         <div>
           <div className="eyebrow">
-            {r.area} · {r.cuisine}
+            {t(r.area)}
+            {t("·")}
+            {t(r.cuisine)}
           </div>
           <h2>{r.name}</h2>
           <p>
-            {yen(r.price)} / 人 · {r.openingHours}
+            {t(yen(r.price))}
+            {t("/ 人 ·")}
+            {t(r.openingHours)}
           </p>
-          <p className="muted">{r.description}</p>
+          <p className="muted">{t(r.description)}</p>
           <Link className="text-link" to={`/restaurants/${r.id}?group=${id}`}>
-            お店の詳細を見る
+            {t("お店の詳細を見る")}
           </Link>
         </div>
       </div>
       {match ? (
         <section className="form-card">
-          <h2>みんなにおすすめの一皿</h2>
+          <h2>{t("みんなにおすすめの一皿")}</h2>
           <p className="muted small">
-            グループのおすすめ度 {match.score}% · 好みに基づく目安
+            {t("グループのおすすめ度")}
+            {match.score}
+            {t("% · 好みに基づく目安")}
           </p>
           <Recommendations match={match} />
         </section>
@@ -338,19 +383,21 @@ export function Decision() {
         <div className="notice">
           <ShieldCheck size={20} />
           <p>
-            プロフィールまたは店舗情報が変更され、現在のアレルギー条件を満たさなくなりました。別のお店を選び直してください。
+            {t(
+              "プロフィールまたは店舗情報が変更され、現在のアレルギー条件を満たさなくなりました。別のお店を選び直してください。",
+            )}
           </p>
         </div>
       )}
       <section className="form-card">
-        <h2>店舗全体のアレルゲン情報</h2>
+        <h2>{t("店舗全体のアレルゲン情報")}</h2>
         <AllergenPanel restaurant={r} />
-        <p className="small muted">{r.crossContactInfo}</p>
+        <p className="small muted">{t(r.crossContactInfo)}</p>
         <Notice />
       </section>
       <div className="form-actions">
         <Link className="button secondary" to={`/groups/${id}`}>
-          グループへ戻る
+          {t("グループへ戻る")}
         </Link>
         <Link
           className="button primary"
@@ -364,11 +411,11 @@ export function Decision() {
             }))
           }
         >
-          お店を選び直す
+          {t("お店を選び直す")}
         </Link>
       </div>
       <p className="muted small center">
-        お店の決定はデモ内の記録です。予約や店舗への連絡は行いません。
+        {t("お店の決定はデモ内の記録です。予約や店舗への連絡は行いません。")}
       </p>
     </div>
   );

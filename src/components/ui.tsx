@@ -1,3 +1,4 @@
+import { useLocale } from "../hooks/useLocale";
 import { AlertTriangle, Check, Utensils, X, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPortal } from "react-dom";
@@ -19,10 +20,11 @@ export function FoodImage({
   alt: string;
   className?: string;
 }) {
+  const { t } = useLocale();
   return (
     <img
       src={src}
-      alt={alt}
+      alt={t(alt)}
       className={className}
       loading="lazy"
       onError={(e) => {
@@ -33,6 +35,7 @@ export function FoodImage({
   );
 }
 export function Avatar({ name, index = 0 }: { name: string; index?: number }) {
+  const { t } = useLocale();
   return (
     <span className={`avatar avatar-${index % 4}`} aria-label={name}>
       {name.slice(0, 1)}
@@ -40,10 +43,11 @@ export function Avatar({ name, index = 0 }: { name: string; index?: number }) {
   );
 }
 export function Notice({ compact = false }: { compact?: boolean }) {
+  const { t } = useLocale();
   return (
     <div className={`notice ${compact ? "compact" : ""}`}>
       <AlertTriangle size={17} />
-      <p>{SAFETY_NOTICE}</p>
+      <p>{t(SAFETY_NOTICE)}</p>
     </div>
   );
 }
@@ -54,15 +58,16 @@ export function Empty({
   title: string;
   children?: ReactNode;
 }) {
+  const { t } = useLocale();
   return (
     <div className="empty">
       <span className="empty-icon">
         <Utensils size={30} />
       </span>
-      <h2>{title}</h2>
-      <div className="muted">{children}</div>
+      <h2>{t(title)}</h2>
+      <div className="muted">{t(children)}</div>
       <Link to="/" className="button secondary">
-        ホームへ
+        {t("ホームへ")}
       </Link>
     </div>
   );
@@ -78,6 +83,7 @@ export function Tags({
   onChange: (values: string[]) => void;
   tone?: string;
 }) {
+  const { t } = useLocale();
   return (
     <div className="tags">
       {options.map((option) => {
@@ -97,7 +103,7 @@ export function Tags({
             }
           >
             {active && <Check size={13} />}
-            {label}
+            {t(label)}
           </button>
         );
       })}
@@ -115,29 +121,33 @@ export function SelectionActions({
   onChange: (values: string[]) => void;
   label: string;
 }) {
+  const { t } = useLocale();
   const count = options.filter((value) => selected.includes(value)).length;
   return (
     <div className="selection-actions">
       <button
         type="button"
         className="text-link small"
-        aria-label={`${label}を全選択`}
+        aria-label={t(`${label}を全選択`)}
         disabled={count === options.length}
         onClick={() => onChange([...new Set([...selected, ...options])])}
       >
-        全選択
+        {t("全選択")}
       </button>
       <button
         type="button"
         className="text-link small"
-        aria-label={`${label}の選択をすべて解除`}
+        aria-label={t(`${label}の選択をすべて解除`)}
         disabled={!selected.length}
         onClick={() => onChange([])}
       >
-        すべて解除
+        {t("すべて解除")}
       </button>
       <span className="small muted" role="status">
-        {count} / {options.length} 選択中
+        {count}
+        {t("/")}
+        {options.length}
+        {t("選択中")}
       </span>
     </div>
   );
@@ -151,6 +161,7 @@ export function Modal({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const { t } = useLocale();
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -191,40 +202,47 @@ export function Modal({
         className="modal"
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-label={t(title)}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
           if (e.key === "Escape") onClose();
         }}
       >
         <div className="modal-title">
-          <h2>{title}</h2>
-          <button className="icon-button" aria-label="閉じる" onClick={onClose}>
+          <h2>{t(title)}</h2>
+          <button
+            className="icon-button"
+            aria-label={t("閉じる")}
+            onClick={onClose}
+          >
             <X size={22} />
           </button>
         </div>
-        {children}
+        {t(children)}
       </section>
     </div>,
     document.body,
   );
 }
 export function AllergenPanel({ restaurant }: { restaurant: Restaurant }) {
+  const { t } = useLocale();
   return (
     <div className="allergen-panel">
       {(["used", "not_used", "unknown"] as const).map((status) => (
         <div key={status}>
           <h4>
             <span className={`status-symbol ${status}`}>
-              {status === "not_used" ? (
-                <Check size={14} />
-              ) : status === "unknown" ? (
-                "?"
-              ) : (
-                "!"
+              {t(
+                status === "not_used" ? (
+                  <Check size={14} />
+                ) : status === "unknown" ? (
+                  "?"
+                ) : (
+                  "!"
+                ),
               )}
             </span>
-            {STATUS_LABELS[status]}
+            {t(STATUS_LABELS[status])}
           </h4>
           <div className="tags">
             {ALLERGENS.filter(
@@ -232,13 +250,13 @@ export function AllergenPanel({ restaurant }: { restaurant: Restaurant }) {
                 (restaurant.allergenStatuses[id] ?? "unknown") === status,
             ).map(([id, name]) => (
               <span className={`tag ${status}`} key={id}>
-                {name}
+                {t(name)}
               </span>
             ))}
             {!ALLERGENS.some(
               ([id]) =>
                 (restaurant.allergenStatuses[id] ?? "unknown") === status,
-            ) && <span className="muted small">該当なし</span>}
+            ) && <span className="muted small">{t("該当なし")}</span>}
           </div>
         </div>
       ))}
@@ -246,6 +264,7 @@ export function AllergenPanel({ restaurant }: { restaurant: Restaurant }) {
   );
 }
 export function Recommendations({ match }: { match: RestaurantMatch }) {
+  const { t } = useLocale();
   return (
     <div className="recommendation-list">
       {match.recommendations.map((rec, i) => (
@@ -254,17 +273,17 @@ export function Recommendations({ match }: { match: RestaurantMatch }) {
           <div>
             <strong>
               {rec.member.nickname}
-              <span className="muted small">さん</span>
+              <span className="muted small">{t("さん")}</span>
             </strong>
-            <p>{rec.menu.name}</p>
-            <span className="muted small">{rec.reasons.join(" / ")}</span>
+            <p>{t(rec.menu.name)}</p>
+            <span className="muted small">{t(rec.reasons.join(" / "))}</span>
           </div>
           <div className="member-score">
             <strong>
               {rec.score}
-              <small>%</small>
+              <small>{t("%")}</small>
             </strong>
-            <span>満足度</span>
+            <span>{t("満足度")}</span>
           </div>
         </div>
       ))}
@@ -282,6 +301,7 @@ export function RestaurantCard({
   groupId?: string;
   onSelect?: () => void;
 }) {
+  const { t } = useLocale();
   const { restaurant: r } = match;
   return (
     <article className="restaurant-card">
@@ -289,16 +309,21 @@ export function RestaurantCard({
         to={`/restaurants/${r.id}${groupId ? `?group=${groupId}` : "?personal=1"}`}
         className="card-image-link"
       >
-        <FoodImage src={r.images[0]} alt={`${r.name}の料理（イメージ）`} />
+        <FoodImage src={r.images[0]} alt={t(`${r.name}の料理（イメージ）`)} />
         <span className={`card-label ${rank === 0 ? "top" : ""}`}>
           <Check size={13} />
-          {rank === 0
-            ? groupId
-              ? "みんなに一番おすすめ"
-              : "あなたに一番おすすめ"
-            : "アレルギー登録条件に一致"}
+          {t(
+            rank === 0
+              ? groupId
+                ? "みんなに一番おすすめ"
+                : "あなたに一番おすすめ"
+              : "アレルギー登録条件に一致",
+          )}
         </span>
-        <span className="image-count">1 / {r.images.length}</span>
+        <span className="image-count">
+          {t("1 /")}
+          {r.images.length}
+        </span>
       </Link>
       <div className="card-body">
         <div className="card-heading">
@@ -308,59 +333,71 @@ export function RestaurantCard({
             <h3>{r.name}</h3>
           </Link>
           <span className="rating">
-            {r.reviews.length > 0 ? (
-              <>
-                <Star size={13} fill="currentColor" />
-                {r.rating.toFixed(1)}
-              </>
-            ) : (
-              "新規登録"
+            {t(
+              r.reviews.length > 0 ? (
+                <>
+                  <Star size={13} fill="currentColor" />
+                  {t(r.rating.toFixed(1))}
+                </>
+              ) : (
+                "新規登録"
+              ),
             )}
           </span>
         </div>
         <p className="card-meta">
-          {r.area} · {r.cuisine}
+          {t(r.area)}
+          {t("·")}
+          {t(r.cuisine)}
         </p>
         <div className="card-score">
-          <span>{groupId ? "みんなの" : "あなたの"}おすすめ度</span>
+          <span>
+            {t(groupId ? "みんなの" : "あなたの")}
+            {t("おすすめ度")}
+          </span>
           <strong>
             {match.score}
-            <small>%</small>
+            <small>{t("%")}</small>
           </strong>
         </div>
         <div className="score-track">
           <span style={{ width: `${match.score}%` }} />
         </div>
         <p className="card-reason">
-          {match.recommendations.filter((rec) =>
-            rec.reasons.some((reason) => reason.startsWith("好き")),
-          ).length > 0
-            ? `${match.recommendations.filter((rec) => rec.reasons.some((reason) => reason.startsWith("好き"))).length}人の「好き」が見つかるお店`
-            : "登録された食の好みで比較しています"}
+          {t(
+            match.recommendations.filter((rec) =>
+              rec.reasons.some((reason) => reason.startsWith("好き")),
+            ).length > 0
+              ? `${match.recommendations.filter((rec) => rec.reasons.some((reason) => reason.startsWith("好き"))).length}人の「好き」が見つかるお店`
+              : "登録された食の好みで比較しています",
+          )}
         </p>
         <div className="card-price">
           <span>
-            <strong>{yen(r.price)}</strong>
-            <small> / 人（目安）</small>
+            <strong>{t(yen(r.price))}</strong>
+            <small>{t("/ 人（目安）")}</small>
           </span>
           <details>
-            <summary>おすすめメニュー</summary>
+            <summary>{t("おすすめメニュー")}</summary>
             <div className="card-recs">
               {match.recommendations.map((rec) => (
                 <p key={rec.member.id}>
                   <b>
-                    {rec.member.nickname} {rec.score}%
+                    {rec.member.nickname} {rec.score}
+                    {t("%")}
                   </b>
-                  <span>{rec.menu.name}</span>
+                  <span>{t(rec.menu.name)}</span>
                 </p>
               ))}
             </div>
           </details>
         </div>
-        {groupId && (
-          <button className="card-decide" onClick={onSelect}>
-            このお店に決定
-          </button>
+        {t(
+          groupId && (
+            <button className="card-decide" onClick={onSelect}>
+              {t("このお店に決定")}
+            </button>
+          ),
         )}
       </div>
     </article>
@@ -373,16 +410,17 @@ export function ProfileSummary({
   values: string[];
   allergies?: boolean;
 }) {
+  const { t } = useLocale();
   return (
     <div className="tags">
       {values.length ? (
         values.map((v) => (
           <span className={`tag ${allergies ? "used" : "neutral"}`} key={v}>
-            {allergies ? allergenLabel(v) : v}
+            {t(allergies ? allergenLabel(v) : v)}
           </span>
         ))
       ) : (
-        <span className="muted small">登録なし</span>
+        <span className="muted small">{t("登録なし")}</span>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+import { useLocale } from "../hooks/useLocale";
 import { Link } from "react-router-dom";
 import { Users, Search, ArrowUpRight, Check, ShieldCheck } from "lucide-react";
 import type { Group, Restaurant } from "../types";
@@ -10,6 +11,7 @@ export function GroupCards({
   groups: Group[];
   restaurants: Restaurant[];
 }) {
+  const { t } = useLocale();
   return (
     <div className="group-card-grid">
       {groups.map((group) => {
@@ -26,13 +28,15 @@ export function GroupCards({
                 <Users size={21} />
               </span>
               <span className={`group-status ${restaurant ? "decided" : ""}`}>
-                {restaurant ? (
-                  <>
-                    <Check size={13} />
-                    お店決定済み
-                  </>
-                ) : (
-                  "お店を検討中"
+                {t(
+                  restaurant ? (
+                    <>
+                      <Check size={13} />
+                      {t("お店決定済み")}
+                    </>
+                  ) : (
+                    "お店を検討中"
+                  ),
                 )}
               </span>
             </div>
@@ -45,23 +49,27 @@ export function GroupCards({
                   <Avatar name={m.nickname} index={i} key={m.id} />
                 ))}
               </div>
-              <span>{group.members.length}人が参加中</span>
+              <span>{t(`${group.members.length}人が参加中`)}</span>
             </div>
             <p className="group-member-names">
               {group.members
                 .slice(0, 4)
                 .map((m) => m.nickname)
                 .join("・")}
-              {group.members.length > 4
-                ? ` ほか${group.members.length - 4}人`
-                : ""}
+              {t(
+                group.members.length > 4
+                  ? ` ほか${group.members.length - 4}人`
+                  : "",
+              )}
             </p>
             <p className="group-allergy-summary">
               <ShieldCheck size={15} />
               <span>
-                {allergies.length
-                  ? `確認する食材：${allergies.map(allergenLabel).join("・")}`
-                  : "アレルギーの登録なし"}
+                {t(
+                  allergies.length
+                    ? `確認する食材：${allergies.map(allergenLabel).join("・")}`
+                    : "アレルギーの登録なし",
+                )}
               </span>
             </p>
             {restaurant && (
@@ -69,17 +77,18 @@ export function GroupCards({
                 className="group-decision-link"
                 to={`/groups/${group.id}/decision`}
               >
-                決定したお店：{restaurant.name}
+                {t("決定したお店：")}
+                {restaurant.name}
                 <ArrowUpRight size={14} />
               </Link>
             )}
             <div className="group-card-actions">
               <Link className="button secondary" to={`/groups/${group.id}`}>
-                参加者・招待
+                {t("参加者・招待")}
               </Link>
               <Link className="button primary" to={`/search?group=${group.id}`}>
                 <Search size={16} />
-                お店を探す
+                {t("お店を探す")}
               </Link>
             </div>
           </article>
