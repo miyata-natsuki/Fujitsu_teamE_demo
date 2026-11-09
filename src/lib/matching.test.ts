@@ -314,14 +314,16 @@ describe("preference scoring", () => {
       ).score,
     ).toBe(50);
   });
-  it("uses average × .7 + minimum × .3 across members", () => {
+  it("scores preference as average × .7 + minimum × .3 across members (safety 60 + preference 40)", () => {
     const r = { ...data.restaurants[0], cuisine: "和食", menus: [menu] };
     const members = [
       { ...member, id: "a", likedCuisines: ["和食"] },
       { ...member, id: "b" },
     ];
     const result = matchRestaurants([r], members, "", Infinity).matches[0];
-    expect(result.score).toBe(Math.round(((65 + 50) / 2) * 0.7 + 50 * 0.3));
+    // 全員に安全なので安全性は満点の60点。好みは満点65点を100%として40点分。
+    const preference = (((65 + 50) / 2) * 0.7 + 50 * 0.3) / 65;
+    expect(result.score).toBe(Math.round(60 + preference * 40));
   });
   it("changes ranking when preferences change without relaxing allergy conditions", () => {
     const r1 = { ...data.restaurants[0], id: "a", cuisine: "和食", menus: [menu] };
