@@ -19,7 +19,9 @@ import { useStore } from "../hooks/useStore";
 import { allergenLabel } from "../data/constants";
 import { matchRestaurants } from "../lib/matching";
 import { ForceDecideButton } from "../components/ForceDecideButton";
+import { ReservationSection } from "../components/ReservationSection";
 import {
+  AccommodationPanel,
   AllergenPanel,
   Empty,
   FoodImage,
@@ -127,6 +129,7 @@ export default function Detail() {
               <strong>{t("調理環境・交差接触について")}</strong>
               <p>{t(r.crossContactInfo)}</p>
             </div>
+            <AccommodationPanel restaurant={r} />
             <Notice />
           </section>
           <section className="detail-section">
@@ -389,10 +392,12 @@ export function Decision() {
           </p>
         </div>
       )}
+      <ReservationSection key={r.id} group={group} restaurant={r} />
       <section className="form-card">
         <h2>{t("店舗全体のアレルゲン情報")}</h2>
         <AllergenPanel restaurant={r} />
         <p className="small muted">{t(r.crossContactInfo)}</p>
+        <AccommodationPanel restaurant={r} />
         <Notice />
       </section>
       <div className="form-actions">
@@ -415,7 +420,7 @@ export function Decision() {
         </Link>
       </div>
       <p className="muted small center">
-        {t("お店の決定はデモ内の記録です。予約や店舗への連絡は行いません。")}
+        {t("お店の決定・予約はデモ内の記録です。店舗への連絡は行いません。")}
       </p>
     </div>
   );

@@ -17,10 +17,24 @@ import {
   CUISINES,
   INGREDIENTS,
   STATUS_LABELS,
+  AVAILABILITY_LABELS,
+  ACCOMMODATION_ITEMS,
   allergenLabel,
 } from "../data/constants";
 import { MOCK_RECEIPT, photo } from "../data/seed";
-import type { Restaurant, MenuItem, AllergenStatus } from "../types";
+import type {
+  Restaurant,
+  MenuItem,
+  AllergenStatus,
+  Accommodations,
+  Availability,
+} from "../types";
+const EMPTY_ACCOMMODATIONS: Accommodations = {
+  removeIngredients: "unknown",
+  separateUtensils: "unknown",
+  separateFryer: "unknown",
+  note: "",
+};
 import { useStore } from "../hooks/useStore";
 import {
   parseFoodText,
@@ -39,6 +53,7 @@ const steps = [
   "読み取り結果",
   "情報の確認",
   "メニュー",
+  "対応範囲",
   "登録",
 ];
 const newMenu = (): MenuItem => ({
@@ -68,6 +83,7 @@ const newRestaurant = (): Restaurant => ({
   ),
   crossContactInfo:
     "調理環境・交差接触への対応は未確認です。利用前に店舗への確認が必要です。",
+  accommodations: { ...EMPTY_ACCOMMODATIONS },
   menus: [newMenu()],
   reviews: [],
 });
@@ -301,7 +317,7 @@ export default function RestaurantForm() {
         className="form-card registration-card"
         onSubmit={(e) => {
           e.preventDefault();
-          if (step === 5) save();
+          if (step === 6) save();
           else next();
         }}
       >
@@ -995,6 +1011,55 @@ export default function RestaurantForm() {
         )}
         {step === 5 && (
           <>
+            <h3>{t("アレルギーへの対応範囲")}</h3>
+            <p className="muted small">
+              {t(
+                "お客様からの依頼にどこまで対応できるかを選択してください。未確認のままでも登録できます。",
+              )}
+            </p>
+            <div className="allergen-editor">
+              {ACCOMMODATION_ITEMS.map(([key, label]) => (
+                <label key={key}>
+                  <strong>{t(label)}</strong>
+                  <select
+                    aria-label={t(label)}
+                    value={(r.accommodations ?? EMPTY_ACCOMMODATIONS)[key]}
+                    onChange={(e) =>
+                      set("accommodations", {
+                        ...(r.accommodations ?? EMPTY_ACCOMMODATIONS),
+                        [key]: e.target.value as Availability,
+                      })
+                    }
+                  >
+                    {Object.entries(AVAILABILITY_LABELS).map(
+                      ([value, text]) => (
+                        <option value={value} key={value}>
+                          {t(text)}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+              ))}
+            </div>
+            <label className="field">
+              {t("対応についての補足（任意）")}
+              <textarea
+                rows={2}
+                maxLength={300}
+                value={(r.accommodations ?? EMPTY_ACCOMMODATIONS).note}
+                onChange={(e) =>
+                  set("accommodations", {
+                    ...(r.accommodations ?? EMPTY_ACCOMMODATIONS),
+                    note: e.target.value,
+                  })
+                }
+              />
+            </label>
+          </>
+        )}
+        {step === 6 && (
+          <>
             <div className="registration-preview">
               <FoodImage src={r.images[0]} alt={t("店舗のイメージ")} />
               <div>
@@ -1071,11 +1136,11 @@ export default function RestaurantForm() {
               reading ||
               uploadingPhotos > 0 ||
               ((step === 1 || step === 2) && !read) ||
-              (step === 5 && !accepted)
+              (step === 6 && !accepted)
             }
           >
             {t(
-              step === 5 ? (
+              step === 6 ? (
                 <>
                   <Check size={17} />
                   {t(id ? "変更を保存" : "店舗を登録する")}

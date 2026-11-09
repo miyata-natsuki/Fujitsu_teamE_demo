@@ -5,7 +5,6 @@ import {
   Search as SearchIcon,
   MapPin,
   Users,
-  UserRound,
   SlidersHorizontal,
   ShieldCheck,
   ChevronDown,
@@ -79,14 +78,6 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
     )
       navigate(`/groups/${group.id}/decision`);
   };
-  const setMode = (mode: string) => {
-    setParams((p) => {
-      const next = new URLSearchParams(p);
-      next.set("mode", mode);
-      return next;
-    });
-    setCuisine("");
-  };
   return (
     <>
       <section className={`search-intro ${home ? "home-intro" : ""}`}>
@@ -115,26 +106,6 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           </p>
         </div>
       </section>
-      <div className="mode-tabs" aria-label={t("検索モード")}>
-        <button
-          className={!personal ? "active" : ""}
-          onClick={() => setMode("group")}
-        >
-          <Users size={18} />
-          {t("みんなで探す")}
-        </button>
-        <button
-          className={personal ? "active" : ""}
-          onClick={() => setMode("personal")}
-        >
-          <UserRound size={18} />
-          {t("ひとりで探す")}
-        </button>
-        <Link className="quick-group-link" to="/groups/new">
-          <Plus size={17} />
-          {t("新しいグループを作る")}
-        </Link>
-      </div>
       <form
         className="search-bar"
         onSubmit={(e) => {
