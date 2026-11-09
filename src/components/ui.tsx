@@ -3,7 +3,7 @@ import { AlertTriangle, Check, Utensils, X, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, type ReactNode } from "react";
-import type { RestaurantMatch, Restaurant } from "../types";
+import type { RestaurantMatch, Restaurant, MenuItem } from "../types";
 import {
   ALLERGENS,
   allergenLabel,
@@ -11,11 +11,27 @@ import {
   SAFETY_NOTICE,
   AVAILABILITY_LABELS,
   ACCOMMODATION_ITEMS,
+  badgeLabel,
 } from "../data/constants";
 export const yen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
-export function AccommodationPanel({ restaurant }: { restaurant: Restaurant }) {
+export function BadgeList({ restaurant }: { restaurant: Restaurant }) {
   const { t } = useLocale();
-  const a = restaurant.accommodations;
+  if (!restaurant.badges?.length) return null;
+  return (
+    <div className="tags">
+      {restaurant.badges.map((id) => (
+        <span className="tag" key={id}>
+          <Check size={12} />
+          {t(badgeLabel(id))}
+        </span>
+      ))}
+    </div>
+  );
+}
+/** メニューごとの対応範囲（食材を抜く、器具を分ける等）。未設定は「未確認」。 */
+export function MenuAccommodations({ menu }: { menu: MenuItem }) {
+  const { t } = useLocale();
+  const a = menu.accommodations;
   return (
     <div className="contact-note">
       <strong>{t("アレルギーへの対応範囲")}</strong>
@@ -26,6 +42,14 @@ export function AccommodationPanel({ restaurant }: { restaurant: Restaurant }) {
           </li>
         ))}
       </ul>
+      {a && a.removeIngredients !== "impossible" && a.removeIngredients !== "unknown" && (
+        <p className="small">
+          {t("抜ける食材：")}
+          {a.removableIngredients?.length
+            ? a.removableIngredients.map((i) => t(i)).join("・")
+            : t("店舗へご確認ください")}
+        </p>
+      )}
       {a?.note && <p className="small">{a.note}</p>}
       <p className="small muted">
         {t("対応内容は予約前に店舗へ直接ご確認ください。")}
@@ -372,6 +396,13 @@ export function RestaurantCard({
           {t("·")}
           {t(r.cuisine)}
         </p>
+        <BadgeList restaurant={r} />
+        {match.requested.total > 0 && (
+          <p className="small muted">
+            {t("指定した条件との一致")}：{match.requested.matched}/
+            {match.requested.total}
+          </p>
+        )}
         <div className="card-score">
           <span>
             {t(groupId ? "みんなの" : "あなたの")}

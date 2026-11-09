@@ -12,14 +12,12 @@ const profile = (
   id: string,
   nickname: string,
   allergies: string[],
-  likes: string[],
   dislikes: string[],
   cuisines: string[],
 ): UserProfile => ({
   id,
   nickname,
   allergies,
-  likedIngredients: likes,
   dislikedIngredients: dislikes,
   likedCuisines: cuisines,
   dislikedCuisines: [],
@@ -29,7 +27,6 @@ export const DEMO_MEMBERS = [
     "host",
     "あかり",
     ["egg"],
-    ["野菜", "魚"],
     ["パクチー"],
     ["和食", "カフェ"],
   ),
@@ -37,7 +34,6 @@ export const DEMO_MEMBERS = [
     "guest-1",
     "ゆうた",
     ["milk"],
-    ["牛肉", "じゃがいも"],
     ["きのこ"],
     ["焼肉", "洋食"],
   ),
@@ -45,7 +41,6 @@ export const DEMO_MEMBERS = [
     "guest-2",
     "みさき",
     ["peanut"],
-    ["トマト", "野菜"],
     ["豚肉"],
     ["イタリアン", "和食"],
   ),
@@ -53,7 +48,6 @@ export const DEMO_MEMBERS = [
     "guest-3",
     "けん",
     [],
-    ["鶏肉", "米"],
     ["えび"],
     ["和食", "韓国料理"],
   ),
@@ -264,6 +258,15 @@ const specs: [string, string, string, number, string, string[]?, string[]?][] =
     ["MORNING ROOM", "池袋", "カフェ", 1800, "cafe", ["milk", "egg"]],
     ["韓国ごはん 月白", "池袋", "韓国料理", 3000, "korean", ["egg"]],
   ];
+// デモ用のバッジ（除去対応可は、メニューの除去対応が「対応可能」または「条件付き」のお店にだけ付ける）
+const DEMO_BADGES: string[][] = [
+  ["removal", "kids_allergy"],
+  ["vegetarian", "vegan", "removal"],
+  ["halal"],
+  ["removal", "gluten_free"],
+  ["vegetarian"],
+  ["halal", "removal"],
+];
 export function createRestaurants(): Restaurant[] {
   return specs.map(
     (
@@ -280,6 +283,15 @@ export function createRestaurants(): Restaurant[] {
           ingredients,
           allergens,
           allergenReviewStatus: "confirmed",
+          accommodations: {
+            removeIngredients: index % 3 === 2 ? "conditional" : "possible",
+            separateUtensils: index % 2 ? "conditional" : "unknown",
+            separateFryer: index % 4 === 0 ? "possible" : "impossible",
+            removableIngredients: ingredients
+              .filter((i) => i !== "米")
+              .slice(0, 2),
+            note: "デモ用の設定です。実際の対応は店舗へ直接ご確認ください。",
+          },
         }),
       );
       const signature: Record<number, string> = {
@@ -324,6 +336,7 @@ export function createRestaurants(): Restaurant[] {
           index % 2 ? "11:00–21:00（火曜定休）" : "11:30–22:00（月曜定休）",
         rating: Number((4.9 - (index % 5) * 0.1).toFixed(1)),
         allergenStatuses,
+        badges: DEMO_BADGES[index % DEMO_BADGES.length],
         crossContactInfo:
           "調理器具・作業台の共用があります。意図しない混入を防ぐための対応は、利用前に店舗へ直接確認が必要です。（デモ情報）",
         menus,

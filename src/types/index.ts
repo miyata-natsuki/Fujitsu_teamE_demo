@@ -3,7 +3,6 @@ export interface UserProfile {
   id: string;
   nickname: string;
   allergies: string[];
-  likedIngredients: string[];
   dislikedIngredients: string[];
   likedCuisines: string[];
   dislikedCuisines: string[];
@@ -30,6 +29,8 @@ export interface Accommodations {
   removeIngredients: Availability;
   separateUtensils: Availability;
   separateFryer: Availability;
+  /** 食材を抜ける場合に、抜ける食材（メニューの使用食材から選ぶ） */
+  removableIngredients?: string[];
   note: string;
 }
 export interface MenuItem {
@@ -41,6 +42,7 @@ export interface MenuItem {
   ingredients: string[] | null;
   allergens: string[];
   allergenReviewStatus: "confirmed" | "unconfirmed";
+  accommodations?: Accommodations;
 }
 export interface Review {
   id: string;
@@ -62,7 +64,7 @@ export interface Restaurant {
   rating: number;
   allergenStatuses: Partial<Record<string, AllergenStatus>>;
   crossContactInfo: string;
-  accommodations?: Accommodations;
+  badges?: string[];
   menus: MenuItem[];
   reviews: Review[];
 }
@@ -91,6 +93,8 @@ export interface Recommendation {
 export interface RestaurantMatch {
   restaurant: Restaurant;
   score: number;
+  /** 検索で指定したバッジ・対応範囲のうち、満たしている数 */
+  requested: { matched: number; total: number };
   recommendations: Recommendation[];
 }
 export interface ExcludedRestaurant {

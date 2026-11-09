@@ -13,7 +13,6 @@ const member: UserProfile = {
   id: "test",
   nickname: "テスト",
   allergies: [],
-  likedIngredients: [],
   dislikedIngredients: [],
   likedCuisines: [],
   dislikedCuisines: [],
@@ -115,7 +114,6 @@ describe("hard allergy constraints", () => {
           {
             ...member,
             allergies: [id],
-            likedIngredients: menu.ingredients!,
             likedCuisines: [r.cuisine],
           },
         ],
@@ -212,70 +210,49 @@ describe("hard allergy constraints", () => {
   });
 });
 describe("preference scoring", () => {
-  it("applies capped fixed ingredient rules, cuisine rules and clamps to 0–100", () => {
+  it("applies cuisine rules and clamps to 0–100", () => {
+    expect(
+      scoreMenu(menu, { ...member, likedCuisines: ["和食"] }, "和食").score,
+    ).toBe(65);
+    expect(
+      scoreMenu(menu, { ...member, dislikedCuisines: ["和食"] }, "和食").score,
+    ).toBe(35);
+    expect(scoreMenu(menu, member, "和食").score).toBe(50);
+    // 苦手な食材は1つにつき20点減点（上限40点）。食材が未確認のメニューは減点しない。
+    expect(
+      scoreMenu(menu, { ...member, dislikedIngredients: ["魚"] }, "和食").score,
+    ).toBe(30);
     expect(
       scoreMenu(
         menu,
-        {
-          ...member,
-          likedIngredients: menu.ingredients!,
-          likedCuisines: ["和食"],
-        },
+        { ...member, dislikedIngredients: ["野菜", "魚", "米"] },
         "和食",
       ).score,
-    ).toBe(95);
-    expect(
-      scoreMenu(
-        menu,
-        {
-          ...member,
-          dislikedIngredients: menu.ingredients!,
-          dislikedCuisines: ["和食"],
-        },
-        "和食",
-      ).score,
-    ).toBe(0);
-  });
-  it("does not award or assume matches for missing ingredient information", () => {
+    ).toBe(10);
     expect(
       scoreMenu(
         { ...menu, ingredients: null },
-        { ...member, likedIngredients: ["野菜"] },
+        { ...member, dislikedIngredients: ["魚"] },
         "和食",
       ).score,
     ).toBe(50);
   });
-  it("chooses an individual best menu and uses average × .7 + minimum × .3", () => {
-    const r = {
-      ...data.restaurants[0],
-      menus: [menu, { ...menu, id: "beef", name: "牛", ingredients: ["牛肉"] }],
-    };
+  it("uses average × .7 + minimum × .3 across members", () => {
+    const r = { ...data.restaurants[0], cuisine: "和食", menus: [menu] };
     const members = [
-      { ...member, id: "veg", likedIngredients: ["野菜", "魚"] },
-      { ...member, id: "beef", likedIngredients: ["牛肉"] },
+      { ...member, id: "a", likedCuisines: ["和食"] },
+      { ...member, id: "b" },
     ];
     const result = matchRestaurants([r], members, "", Infinity).matches[0];
-    expect(result.recommendations.map((x) => x.menu.id)).toEqual([
-      "menu",
-      "beef",
-    ]);
-    expect(result.score).toBe(Math.round(((80 + 65) / 2) * 0.7 + 65 * 0.3));
+    expect(result.score).toBe(Math.round(((65 + 50) / 2) * 0.7 + 50 * 0.3));
   });
   it("changes ranking when preferences change without relaxing allergy conditions", () => {
-    const r1 = {
-      ...data.restaurants[0],
-      id: "a",
-      menus: [{ ...menu, ingredients: ["野菜"] }],
-    };
-    const r2 = {
-      ...data.restaurants[0],
-      id: "b",
-      menus: [{ ...menu, ingredients: ["牛肉"] }],
-    };
+    const r1 = { ...data.restaurants[0], id: "a", cuisine: "和食", menus: [menu] };
+    const r2 = { ...data.restaurants[0], id: "b", cuisine: "洋食", menus: [menu] };
     expect(
       matchRestaurants(
         [r1, r2],
-        [{ ...member, likedIngredients: ["野菜"] }],
+        [{ ...member, likedCuisines: ["和食"] }],
         "",
         Infinity,
       ).matches[0].restaurant.id,
@@ -283,13 +260,12 @@ describe("preference scoring", () => {
     expect(
       matchRestaurants(
         [r1, r2],
-        [{ ...member, likedIngredients: ["牛肉"] }],
+        [{ ...member, likedCuisines: ["洋食"] }],
         "",
         Infinity,
       ).matches[0].restaurant.id,
     ).toBe("b");
-  });
-  it("returns no recommendations for no members or no eligible restaurants", () => {
+  });  it("returns no recommendations for no members or no eligible restaurants", () => {
     expect(
       matchRestaurants(data.restaurants, [], "", Infinity).matches,
     ).toEqual([]);

@@ -19,6 +19,7 @@ import {
   STATUS_LABELS,
   AVAILABILITY_LABELS,
   ACCOMMODATION_ITEMS,
+  BADGES,
   allergenLabel,
 } from "../data/constants";
 import { MOCK_RECEIPT, photo } from "../data/seed";
@@ -53,7 +54,7 @@ const steps = [
   "読み取り結果",
   "情報の確認",
   "メニュー",
-  "対応範囲",
+  "バッジ",
   "登録",
 ];
 const newMenu = (): MenuItem => ({
@@ -65,6 +66,7 @@ const newMenu = (): MenuItem => ({
   ingredients: ["野菜", "米", "玉ねぎ"],
   allergens: [],
   allergenReviewStatus: "unconfirmed",
+  accommodations: { ...EMPTY_ACCOMMODATIONS },
 });
 const newRestaurant = (): Restaurant => ({
   id: crypto.randomUUID(),
@@ -83,7 +85,7 @@ const newRestaurant = (): Restaurant => ({
   ),
   crossContactInfo:
     "調理環境・交差接触への対応は未確認です。利用前に店舗への確認が必要です。",
-  accommodations: { ...EMPTY_ACCOMMODATIONS },
+  badges: [],
   menus: [newMenu()],
   reviews: [],
 });
@@ -977,6 +979,79 @@ export default function RestaurantForm() {
                     })
                   }
                 />
+                <h4>{t("アレルギーへの対応範囲")}</h4>
+                <div className="allergen-editor">
+                  {ACCOMMODATION_ITEMS.map(([key, label]) => (
+                    <label key={key}>
+                      <strong>{t(label)}</strong>
+                      <select
+                        aria-label={t(`${label}（メニュー${i + 1}）`)}
+                        value={(m.accommodations ?? EMPTY_ACCOMMODATIONS)[key]}
+                        onChange={(e) =>
+                          menuSet(m.id, {
+                            accommodations: {
+                              ...(m.accommodations ?? EMPTY_ACCOMMODATIONS),
+                              [key]: e.target.value as Availability,
+                            },
+                          })
+                        }
+                      >
+                        {Object.entries(AVAILABILITY_LABELS).map(
+                          ([value, text]) => (
+                            <option value={value} key={value}>
+                              {t(text)}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+                  ))}
+                </div>
+                {(m.accommodations ?? EMPTY_ACCOMMODATIONS).removeIngredients !==
+                  "impossible" &&
+                  (m.accommodations ?? EMPTY_ACCOMMODATIONS).removeIngredients !==
+                    "unknown" && (
+                    <>
+                      <h4>{t("抜ける食材")}</h4>
+                      {m.ingredients && m.ingredients.length > 0 ? (
+                        <IngredientPicker
+                          label={t("抜ける食材")}
+                          options={m.ingredients}
+                          selected={(
+                            m.accommodations?.removableIngredients ?? []
+                          ).filter((i) => m.ingredients!.includes(i))}
+                          onChange={(removableIngredients) =>
+                            menuSet(m.id, {
+                              accommodations: {
+                                ...(m.accommodations ?? EMPTY_ACCOMMODATIONS),
+                                removableIngredients,
+                              },
+                            })
+                          }
+                        />
+                      ) : (
+                        <p className="small muted">
+                          {t("先に「使用食材」を選択すると、抜ける食材を選べます。")}
+                        </p>
+                      )}
+                    </>
+                  )}
+                <label className="field">
+                  {t("対応についての補足（任意）")}
+                  <textarea
+                    rows={2}
+                    maxLength={300}
+                    value={(m.accommodations ?? EMPTY_ACCOMMODATIONS).note}
+                    onChange={(e) =>
+                      menuSet(m.id, {
+                        accommodations: {
+                          ...(m.accommodations ?? EMPTY_ACCOMMODATIONS),
+                          note: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </label>
                 <label className="checkbox-label review-confirm">
                   <input
                     type="checkbox"
@@ -1011,54 +1086,26 @@ export default function RestaurantForm() {
         )}
         {step === 5 && (
           <>
-            <h3>{t("アレルギーへの対応範囲")}</h3>
+            <h3>{t("お店のバッジ")}</h3>
             <p className="muted small">
               {t(
-                "お客様からの依頼にどこまで対応できるかを選択してください。未確認のままでも登録できます。",
+                "対応できる項目を選んでください。選んだバッジはお店のカードに表示され、お客様の検索条件との一致に使われます。",
               )}
             </p>
-            <div className="allergen-editor">
-              {ACCOMMODATION_ITEMS.map(([key, label]) => (
-                <label key={key}>
-                  <strong>{t(label)}</strong>
-                  <select
-                    aria-label={t(label)}
-                    value={(r.accommodations ?? EMPTY_ACCOMMODATIONS)[key]}
-                    onChange={(e) =>
-                      set("accommodations", {
-                        ...(r.accommodations ?? EMPTY_ACCOMMODATIONS),
-                        [key]: e.target.value as Availability,
-                      })
-                    }
-                  >
-                    {Object.entries(AVAILABILITY_LABELS).map(
-                      ([value, text]) => (
-                        <option value={value} key={value}>
-                          {t(text)}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </label>
-              ))}
-            </div>
-            <label className="field">
-              {t("対応についての補足（任意）")}
-              <textarea
-                rows={2}
-                maxLength={300}
-                value={(r.accommodations ?? EMPTY_ACCOMMODATIONS).note}
-                onChange={(e) =>
-                  set("accommodations", {
-                    ...(r.accommodations ?? EMPTY_ACCOMMODATIONS),
-                    note: e.target.value,
-                  })
-                }
-              />
-            </label>
+            <IngredientPicker
+              label={t("お店のバッジ")}
+              options={BADGES}
+              selected={r.badges ?? []}
+              onChange={(badges) => set("badges", badges)}
+              tone="green"
+            />
+            <p className="small muted">
+              {t(
+                "バッジは自己申告の表示です。内容は予約前にお客様が店舗へ確認します。",
+              )}
+            </p>
           </>
-        )}
-        {step === 6 && (
+        )}        {step === 6 && (
           <>
             <div className="registration-preview">
               <FoodImage src={r.images[0]} alt={t("店舗のイメージ")} />

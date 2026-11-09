@@ -9,7 +9,6 @@ export const blankProfile = (): UserProfile => ({
   id: crypto.randomUUID(),
   nickname: "",
   allergies: [],
-  likedIngredients: [],
   dislikedIngredients: [],
   likedCuisines: [],
   dislikedCuisines: [],
@@ -32,8 +31,6 @@ export function ProfileForm({
     setProfile((p) => {
       const next = { ...p, [key]: value };
       const opposite = {
-        likedIngredients: "dislikedIngredients",
-        dislikedIngredients: "likedIngredients",
         likedCuisines: "dislikedCuisines",
         dislikedCuisines: "likedCuisines",
       } as const;
@@ -107,22 +104,11 @@ export function ProfileForm({
       ) : (
         <>
           <section className="form-section">
-            <h3>{t("好きな食材")}</h3>
-            <IngredientPicker
-              label={t("好きな食材")}
-              allowSelectAll
-              options={INGREDIENTS}
-              selected={profile.likedIngredients}
-              onChange={(v) => set("likedIngredients", v)}
-              tone="green"
-            />
-          </section>
-          <section className="form-section">
             <h3>{t("苦手な食材")}</h3>
             <IngredientPicker
               label={t("苦手な食材")}
               options={INGREDIENTS}
-              selected={profile.dislikedIngredients}
+              selected={profile.dislikedIngredients ?? []}
               onChange={(v) => set("dislikedIngredients", v)}
               tone="gray"
             />

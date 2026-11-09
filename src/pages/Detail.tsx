@@ -21,7 +21,8 @@ import { matchRestaurants } from "../lib/matching";
 import { ForceDecideButton } from "../components/ForceDecideButton";
 import { ReservationSection } from "../components/ReservationSection";
 import {
-  AccommodationPanel,
+  BadgeList,
+  MenuAccommodations,
   AllergenPanel,
   Empty,
   FoodImage,
@@ -99,6 +100,7 @@ export default function Detail() {
         <div>
           <section className="detail-section">
             <h2>{t("季節のおいしさを、気負わずに。")}</h2>
+            <BadgeList restaurant={r} />
             <p>{t(r.description)}</p>
             <p className="with-icon muted">
               <Clock size={18} />
@@ -129,7 +131,6 @@ export default function Detail() {
               <strong>{t("調理環境・交差接触について")}</strong>
               <p>{t(r.crossContactInfo)}</p>
             </div>
-            <AccommodationPanel restaurant={r} />
             <Notice />
           </section>
           <section className="detail-section">
@@ -175,6 +176,7 @@ export default function Detail() {
                         </span>
                       )}
                     </div>
+                    <MenuAccommodations menu={menu} />
                   </div>
                 </article>
               ))}
@@ -397,7 +399,6 @@ export function Decision() {
         <h2>{t("店舗全体のアレルゲン情報")}</h2>
         <AllergenPanel restaurant={r} />
         <p className="small muted">{t(r.crossContactInfo)}</p>
-        <AccommodationPanel restaurant={r} />
         <Notice />
       </section>
       <div className="form-actions">

@@ -4,6 +4,7 @@ import type {
   UserProfile,
   RestaurantMatch,
   ExcludedRestaurant,
+  Accommodations,
 } from "../types";
 import { SCORE_WEIGHTS as W, allergenLabel } from "../data/constants";
 export function allergyImpact(restaurant: Restaurant, members: UserProfile[]) {
@@ -42,20 +43,15 @@ export function scoreMenu(
   let score = W.base;
   const reasons: string[] = [];
   if (menu.ingredients) {
-    const liked = member.likedIngredients.filter((i) =>
+    const disliked = (member.dislikedIngredients ?? []).filter((i) =>
       menu.ingredients!.includes(i),
     );
-    const disliked = member.dislikedIngredients.filter((i) =>
-      menu.ingredients!.includes(i),
-    );
-    score += Math.min(liked.length * W.likedIngredient, W.likedIngredientCap);
     score -= Math.min(
       disliked.length * -W.dislikedIngredient,
       W.dislikedIngredientCap,
     );
-    if (liked.length) reasons.push(`好きな食材：${liked.join("・")}`);
     if (disliked.length) reasons.push(`苦手な食材：${disliked.join("・")}`);
-  } else reasons.push("食材情報が未確認のため、食材の加点なし");
+  }
   if (member.likedCuisines.includes(cuisine)) {
     score += W.likedCuisine;
     reasons.push(`好きなジャンル：${cuisine}`);
@@ -67,17 +63,44 @@ export function scoreMenu(
   if (!reasons.length) reasons.push("好みの登録と照合した標準スコア");
   return { score: Math.max(0, Math.min(100, score)), reasons };
 }
+export interface BudgetRange {
+  min: number;
+  max?: number;
+}
+export interface SearchWants {
+  badges: string[];
+  accommodations: string[];
+}
+/** その店が、指定バッジ・対応範囲のうちいくつ満たしているか。 */
+export function requestedFit(restaurant: Restaurant, wants: SearchWants) {
+  const total = wants.badges.length + wants.accommodations.length;
+  const badges = restaurant.badges ?? [];
+  const matched =
+    wants.badges.filter((b) => badges.includes(b)).length +
+    wants.accommodations.filter((key) =>
+      restaurant.menus.some((m) => {
+        const v = m.accommodations?.[key as keyof Accommodations];
+        return v === "possible" || v === "conditional";
+      }),
+    ).length;
+  return { matched, total };
+}
 export function matchRestaurants(
   restaurants: Restaurant[],
   members: UserProfile[],
   area: string,
-  budget: number,
+  budget: number | BudgetRange,
+  wants: SearchWants = { badges: [], accommodations: [] },
 ) {
+  const range: BudgetRange =
+    typeof budget === "number" ? { min: 0, max: budget } : budget;
   const matches: RestaurantMatch[] = [],
     excluded: ExcludedRestaurant[] = [];
   if (!members.length) return { matches, excluded, filteredCount: 0 };
   const filtered = restaurants.filter(
-    (r) => (!area || r.area === area) && r.price <= budget,
+    (r) => (!area || r.area === area) &&
+      r.price >= range.min &&
+      (range.max === undefined || r.price <= range.max),
   );
   const allergies = [...new Set(members.flatMap((m) => m.allergies))];
   for (const restaurant of filtered) {
@@ -122,11 +145,18 @@ export function matchRestaurants(
     }
     const scores = recommendations.map((r) => r.score);
     const average = scores.reduce((a, b) => a + b, 0) / scores.length;
-    matches.push({
-      restaurant,
-      recommendations,
-      score: Math.round(average * W.average + Math.min(...scores) * W.minimum),
-    });
+    const base = Math.round(
+      average * W.average + Math.min(...scores) * W.minimum,
+    );
+    const requested = requestedFit(restaurant, wants);
+    // 指定バッジ・対応範囲は加点のみ。アレルギーの除外条件は緩和しない。
+    const score = requested.total
+      ? Math.round(
+          base * (1 - W.requested) +
+            (requested.matched / requested.total) * 100 * W.requested,
+        )
+      : base;
+    matches.push({ restaurant, recommendations, score, requested });
   }
   matches.sort(
     (a, b) =>

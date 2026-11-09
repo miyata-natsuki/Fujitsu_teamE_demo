@@ -394,10 +394,8 @@ export function GroupManagement() {
               </h4>
               <ProfileSummary values={m.allergies} allergies />
             </div>
-            <h4>{t("好きな食材")}</h4>
-            <ProfileSummary values={m.likedIngredients} />
             <h4>{t("苦手な食材")}</h4>
-            <ProfileSummary values={m.dislikedIngredients} />
+            <ProfileSummary values={m.dislikedIngredients ?? []} />
             <h4>{t("好きなジャンル")}</h4>
             <ProfileSummary values={m.likedCuisines} />
             <h4>{t("苦手なジャンル")}</h4>

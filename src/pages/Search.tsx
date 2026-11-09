@@ -22,9 +22,17 @@ import {
 import { useStore } from "../hooks/useStore";
 import { AllergyImpact } from "../components/AllergyImpact";
 import { ForceDecideButton } from "../components/ForceDecideButton";
-import { AREAS, BUDGETS, CUISINES, allergenLabel } from "../data/constants";
+import {
+  AREAS,
+  BUDGET_RANGES,
+  BADGES,
+  ACCOMMODATION_ITEMS,
+  CUISINES,
+  allergenLabel,
+  budgetLabel,
+} from "../data/constants";
 import { matchRestaurants } from "../lib/matching";
-import { RestaurantCard, Notice, Empty, yen } from "../components/ui";
+import { RestaurantCard, Notice, Empty } from "../components/ui";
 const cuisineIcons = [
   Fish,
   Utensils,
@@ -47,16 +55,30 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
   const group = data.groups.find((g) => g.id === selectedGroup);
   const members = personal ? [data.profile] : (group?.members ?? []);
   const [area, setArea] = useState(params.get("area") ?? "渋谷");
-  const [budget, setBudget] = useState(Number(params.get("budget") || 4000));
+  const [budget, setBudget] = useState(params.get("budget") || "3000-5000");
+  const list = (key: string) => params.get(key)?.split(",").filter(Boolean) ?? [];
+  const toggleWant = (key: "badges" | "accom", v: string) =>
+    setParams((p) => {
+      const next = new URLSearchParams(p);
+      const cur = list(key);
+      const upd = cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v];
+      if (upd.length) next.set(key, upd.join(","));
+      else next.delete(key);
+      return next;
+    });
   const [cuisine, setCuisine] = useState("");
   const [searched, setSearched] = useState(false);
   const appliedArea = params.get("area") ?? "渋谷";
-  const appliedBudget = Number(params.get("budget") || 4000);
+  const appliedRange =
+    BUDGET_RANGES.find((b) => b.id === (params.get("budget") || "3000-5000")) ??
+    BUDGET_RANGES[3];
+  const wants = { badges: list("badges"), accommodations: list("accom") };
   const result = matchRestaurants(
     data.restaurants,
     members,
     appliedArea,
-    appliedBudget,
+    appliedRange,
+    wants,
   );
   const matches = result.matches.filter(
     (m) => !cuisine || m.restaurant.cuisine === cuisine,
@@ -113,7 +135,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           setParams((p) => {
             const next = new URLSearchParams(p);
             next.set("area", area);
-            next.set("budget", String(budget));
+            next.set("budget", budget);
             return next;
           });
           setSearched(true);
@@ -142,14 +164,13 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           <div>
             <span>{t("予算・1人あたり")}</span>
             <select
-              aria-label={t("予算上限")}
+              aria-label={t("予算")}
               value={budget}
-              onChange={(e) => setBudget(Number(e.target.value))}
+              onChange={(e) => setBudget(e.target.value)}
             >
-              {BUDGETS.map((b) => (
-                <option key={b} value={b}>
-                  {t(yen(b))}
-                  {t("まで")}
+              {BUDGET_RANGES.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {t(budgetLabel(b))}
                 </option>
               ))}
             </select>
@@ -195,7 +216,52 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           {t("お店を探す")}
         </button>
       </form>
-      <div className="search-safety">
+      <details className="excluded-section" open={wants.badges.length + wants.accommodations.length > 0}>
+        <summary>
+          <span>
+            <SlidersHorizontal size={20} />
+            <strong>{t("こだわり条件（バッジ・対応範囲）")}</strong>
+            {wants.badges.length + wants.accommodations.length > 0 && (
+              <span className="tag neutral">
+                {wants.badges.length + wants.accommodations.length}
+                {t("件")}
+              </span>
+            )}
+          </span>
+          <ChevronDown size={19} />
+        </summary>
+        <p className="muted small">
+          {t(
+            "指定した条件に合うお店ほど、おすすめ度が高くなります。アレルギーによる除外条件は緩めません。",
+          )}
+        </p>
+        <h4>{t("お店のバッジ")}</h4>
+        <div className="tags">
+          {BADGES.map(([id, label]) => (
+            <label className="checkbox-label" key={id}>
+              <input
+                type="checkbox"
+                checked={wants.badges.includes(id)}
+                onChange={() => toggleWant("badges", id)}
+              />
+              {t(label)}
+            </label>
+          ))}
+        </div>
+        <h4>{t("アレルギーへの対応範囲")}</h4>
+        <div className="tags">
+          {ACCOMMODATION_ITEMS.map(([key, label]) => (
+            <label className="checkbox-label" key={key}>
+              <input
+                type="checkbox"
+                checked={wants.accommodations.includes(key)}
+                onChange={() => toggleWant("accom", key)}
+              />
+              {t(label)}
+            </label>
+          ))}
+        </div>
+      </details>      <div className="search-safety">
         <ShieldCheck size={17} />
         <p>
           {members.length}
@@ -256,8 +322,8 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
             <p>
               {t(appliedArea || "すべてのエリア")}
               {t("·")}
-              {t(yen(appliedBudget))}
-              {t("まで · 登録されたアレルギー条件に一致")}
+              {t(budgetLabel(appliedRange))}
+              {t(" · 登録されたアレルギー条件に一致")}
             </p>
           </div>
           <span className="sort-label">

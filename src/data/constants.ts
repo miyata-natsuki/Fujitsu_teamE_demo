@@ -63,15 +63,35 @@ export const CUISINES = [
   "エスニック",
 ];
 export const AREAS = ["渋谷", "新宿", "池袋"];
-export const BUDGETS = [2000, 3000, 4000, 5000, 8000];
+/** 予算の範囲（max なしは「〜円以上」） */
+export const BUDGET_RANGES: { id: string; min: number; max?: number }[] = [
+  { id: "0-1000", min: 0, max: 1000 },
+  { id: "1000-2000", min: 1000, max: 2000 },
+  { id: "2000-3000", min: 2000, max: 3000 },
+  { id: "3000-5000", min: 3000, max: 5000 },
+  { id: "5000-", min: 5000 },
+];
+export const budgetLabel = (r: { min: number; max?: number }) =>
+  r.max === undefined
+    ? `${r.min.toLocaleString("ja-JP")}円以上`
+    : `${r.min.toLocaleString("ja-JP")}円～${r.max.toLocaleString("ja-JP")}円`;
+export const BADGES = [
+  ["halal", "ハラール対応可"],
+  ["removal", "除去対応可"],
+  ["vegetarian", "ベジタリアン対応"],
+  ["vegan", "ヴィーガン対応"],
+  ["gluten_free", "グルテンフリー対応"],
+  ["kids_allergy", "アレルギー対応メニューあり"],
+] as const;
+export const badgeLabel = (id: string) =>
+  BADGES.find((b) => b[0] === id)?.[1] ?? id;
 export const SCORE_WEIGHTS = {
   base: 50,
-  likedIngredient: 15,
   dislikedIngredient: -20,
-  likedIngredientCap: 30,
   dislikedIngredientCap: 40,
   likedCuisine: 15,
   dislikedCuisine: -15,
+  requested: 0.3,
   average: 0.7,
   minimum: 0.3,
 };
