@@ -37,6 +37,7 @@ const cuisineIcons = [
   Coffee,
   Leaf,
 ];
+const PERSONAL = "__personal";
 export default function SearchPage({ home = false }: { home?: boolean }) {
   const { t } = useLocale();
   const { data, update } = useStore();
@@ -186,34 +187,36 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
         <label>
           <Users size={20} />
           <div>
-            <span>{t(personal ? "プロフィール" : "グループ")}</span>
-            {personal ? (
-              <Link className="search-profile" to="/profile">
-                {data.profile.nickname}
-                {t("の食の好み")}
-              </Link>
-            ) : (
-              <select
-                aria-label={t("検索するグループ")}
-                value={selectedGroup ?? ""}
-                onChange={(e) =>
-                  setParams((p) => {
-                    const next = new URLSearchParams(p);
-                    next.set("group", e.target.value);
-                    return next;
-                  })
-                }
-              >
-                {data.groups.map((g) => (
-                  <option value={g.id} key={g.id}>
-                    {g.name}
-                    {t("·")}
-                    {g.members.length}
-                    {t("人")}
-                  </option>
-                ))}
-              </select>
-            )}
+            <span>{t("グループ")}</span>
+            <select
+              aria-label={t("検索するグループ")}
+              value={personal ? PERSONAL : (selectedGroup ?? "")}
+              onChange={(e) => {
+                const v = e.target.value;
+                setParams((p) => {
+                  const next = new URLSearchParams(p);
+                  if (v === PERSONAL) next.set("mode", "personal");
+                  else {
+                    next.set("mode", "group");
+                    next.set("group", v);
+                  }
+                  return next;
+                });
+                setCuisine("");
+              }}
+            >
+              <option value={PERSONAL}>
+                {t("ひとり")}（{data.profile.nickname}）
+              </option>
+              {data.groups.map((g) => (
+                <option value={g.id} key={g.id}>
+                  {g.name}
+                  {t("·")}
+                  {g.members.length}
+                  {t("人")}
+                </option>
+              ))}
+            </select>
           </div>
         </label>
         <button className="button primary search-submit">
