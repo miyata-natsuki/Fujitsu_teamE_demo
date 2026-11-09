@@ -20,7 +20,6 @@ import {
   Plus,
 } from "lucide-react";
 import { useStore } from "../hooks/useStore";
-import { AllergyImpact } from "../components/AllergyImpact";
 import { ForceDecideButton } from "../components/ForceDecideButton";
 import {
   AREAS,
@@ -84,12 +83,8 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
     (m) => !cuisine || m.restaurant.cuisine === cuisine,
   );
   const allergies = [...new Set(members.flatMap((m) => m.allergies))];
-  const choose = (id: string, force = false) => {
-    if (
-      !group ||
-      (!force && !result.matches.some((m) => m.restaurant.id === id))
-    )
-      return;
+  const choose = (id: string) => {
+    if (!group) return;
     if (
       update((d) => ({
         ...d,
@@ -232,7 +227,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
         </summary>
         <p className="muted small">
           {t(
-            "指定した条件に合うお店ほど、おすすめ度が高くなります。アレルギーによる除外条件は緩めません。",
+            "指定した条件に合うお店ほど、マッチ度が高くなります。",
           )}
         </p>
         <h4>{t("お店のバッジ")}</h4>
@@ -323,12 +318,12 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
               {t(appliedArea || "すべてのエリア")}
               {t("·")}
               {t(budgetLabel(appliedRange))}
-              {t(" · 登録されたアレルギー条件に一致")}
+              {t(" · マッチ度の高い順（除外はせず、すべて表示）")}
             </p>
           </div>
           <span className="sort-label">
             <SlidersHorizontal size={16} />
-            {t("おすすめ度順")}
+            {t("マッチ度順")}
           </span>
         </div>
         {searched && (
@@ -346,6 +341,15 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
                 rank={i}
                 groupId={!personal ? group?.id : undefined}
                 onSelect={() => choose(m.restaurant.id)}
+                decide={
+                  m.warnings.length > 0 ? (
+                    <ForceDecideButton
+                      name={m.restaurant.name}
+                      reasons={m.warnings}
+                      onConfirm={() => choose(m.restaurant.id)}
+                    />
+                  ) : undefined
+                }
                 key={m.restaurant.id}
               />
             ))}
@@ -354,7 +358,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           <Empty title={t("条件に一致するお店がありません")}>
             <p>
               {t(
-                "アレルギー条件は緩和せず、エリアや予算、ジャンルを変更して探してください。",
+                "エリアや予算、ジャンルを変更して探してください。",
               )}
             </p>
             {!members.length && (
@@ -365,53 +369,6 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           </Empty>
         )}
       </section>
-      {result.excluded.length > 0 && (
-        <details className="excluded-section">
-          <summary>
-            <span>
-              <ShieldCheck size={20} />
-              <strong>{t("候補から除外したお店")}</strong>
-              <span className="tag neutral">
-                {result.excluded.length}
-                {t("件")}
-              </span>
-            </span>
-            <ChevronDown size={19} />
-          </summary>
-          <p className="muted small">
-            {t(
-              "使用あり・未確認のアレルゲンは、メニューや好みの点数に関係なく候補から除外します。",
-            )}
-          </p>
-          <div className="excluded-grid">
-            {result.excluded.map(({ restaurant: r, reasons }) => (
-              <div key={r.id}>
-                <Link
-                  to={`/restaurants/${r.id}${!personal && group ? `?group=${group.id}` : ""}`}
-                >
-                  <strong>{r.name}</strong>
-                </Link>
-                <AllergyImpact restaurant={r} members={members} />
-                {reasons.map((reason) => (
-                  <p key={reason}>{t(reason)}</p>
-                ))}
-                {group && (
-                  <ForceDecideButton
-                    name={r.name}
-                    reasons={reasons}
-                    onConfirm={() => choose(r.id, true)}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-          <p className="small muted">
-            {t(
-              "割合は全メニューのうち、参加者の登録アレルギーに該当する確認済みメニューの品数です。複数のアレルギーに該当しても1品として数えます。未確認のメニューは分母に含み、該当数には含めません。店舗全体の使用状況による除外は維持します。",
-            )}
-          </p>
-        </details>
-      )}
       <div className="bottom-links">
         <Link to="/groups/new">
           <Plus size={17} />

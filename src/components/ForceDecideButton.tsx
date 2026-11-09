@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocale } from "../hooks/useLocale";
 import { Modal } from "./ui";
-/** Decide on a restaurant that was excluded by allergy matching, after an explicit warning. */
+/** アレルギー情報に注意点があるお店を、警告を確認したうえで決定する。 */
 export function ForceDecideButton({
   name,
   reasons,
@@ -24,12 +24,12 @@ export function ForceDecideButton({
       </button>
       {open && (
         <Modal
-          title="除外されたお店を決定しますか？"
+          title="アレルギー情報に確認が必要なお店です。決定しますか？"
           onClose={() => setOpen(false)}
         >
           <p>
             <strong>{name}</strong>
-            {t("はアレルギー条件に一致しないため、候補から除外されています。")}
+            {t("は、アレルギー情報に次の確認事項があります。")}
           </p>
           {reasons.map((reason) => (
             <p className="small" key={reason}>

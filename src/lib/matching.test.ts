@@ -27,7 +27,7 @@ const menu: MenuItem = {
   allergens: [],
   allergenReviewStatus: "confirmed",
 };
-describe("excluded restaurant menu allergy percentages", () => {
+describe("restaurant menu allergy percentages", () => {
   it("uses all menus as denominator and counts overlapping allergens only once per menu", () => {
     const r = {
       ...data.restaurants[0],
@@ -71,7 +71,7 @@ describe("excluded restaurant menu allergy percentages", () => {
     expect(allergyImpact(r, [{ ...member, allergies: [] }]).affected).toBe(0);
     expect(allergyImpact({ ...r, menus: [] }, []).percent).toBe(0);
   });
-  it("keeps store-wide exclusion when menu overlap is zero", () => {
+  it("keeps the store-wide warning and a low cap when menu overlap is zero", () => {
     const r = {
       ...data.restaurants[0],
       menus: [menu],
@@ -79,13 +79,22 @@ describe("excluded restaurant menu allergy percentages", () => {
     };
     const members = [{ ...member, allergies: ["egg"] }];
     expect(allergyImpact(r, members).percent).toBe(0);
-    expect(matchRestaurants([r], members, "", Infinity).excluded).toHaveLength(
-      1,
-    );
+    const [m] = matchRestaurants([r], members, "", Infinity).matches;
+    expect(m.warnings).toHaveLength(1);
+    expect(m.score).toBeLessThanOrEqual(40);
   });
 });
-describe("hard allergy constraints", () => {
-  it("seed has 20 diverse restaurants, four menus and three reviews each; positive and excluded matches", () => {
+describe("match score without exclusion", () => {
+  const safeStore = (id: string, extra = {}) => ({
+    ...data.restaurants[0],
+    id,
+    menus: [menu],
+    allergenStatuses: Object.fromEntries(
+      ALLERGENS.map(([a]) => [a, "not_used" as const]),
+    ),
+    ...extra,
+  });
+  it("seed has 20 diverse restaurants, four menus and three reviews each; every filtered restaurant is listed in score order", () => {
     expect(data.restaurants).toHaveLength(20);
     for (const r of data.restaurants) {
       expect(r.menus.length).toBeGreaterThanOrEqual(3);
@@ -95,55 +104,59 @@ describe("hard allergy constraints", () => {
       data.restaurants,
       data.groups[0].members,
       "渋谷",
-      4000,
+      { min: 0, max: 4000 },
     );
-    expect(result.matches.length).toBeGreaterThanOrEqual(4);
-    expect(result.excluded.length).toBeGreaterThan(0);
+    expect(result.matches).toHaveLength(result.filteredCount);
+    const scores = result.matches.map((m) => m.score);
+    expect(scores).toEqual([...scores].sort((a, b) => b - a));
+    expect(result.matches.some((m) => m.warnings.length > 0)).toBe(true);
+    expect(scores.every((s) => s >= 0 && s <= 100)).toBe(true);
+  });
+  it("gives 100 to a fully safe restaurant with the best preference", () => {
+    const r = safeStore("perfect", { cuisine: "和食" });
+    const result = matchRestaurants(
+      [r],
+      [{ ...member, likedCuisines: ["和食"] }],
+      "",
+      Infinity,
+    );
+    expect(result.matches[0].score).toBe(100);
+    expect(result.matches[0].warnings).toEqual([]);
   });
   it.each(ALLERGENS)(
-    "never recommends store with %s used, even when a menu is free of it",
+    "keeps a store with %s used in the list but caps it at 40",
     (id) => {
-      const r = {
-        ...data.restaurants[0],
-        menus: [menu],
-        allergenStatuses: { [id]: "used" as const },
-      };
+      const r = safeStore("x", { allergenStatuses: { [id]: "used" as const } });
       const result = matchRestaurants(
         [r],
-        [
-          {
-            ...member,
-            allergies: [id],
-            likedCuisines: [r.cuisine],
-          },
-        ],
+        [{ ...member, allergies: [id], likedCuisines: [r.cuisine] }],
         "",
         Infinity,
       );
-      expect(result.matches).toEqual([]);
-      expect(result.excluded[0].reasons[0]).toContain("使用あり");
+      expect(result.matches).toHaveLength(1);
+      expect(result.matches[0].score).toBeLessThanOrEqual(40);
+      expect(result.matches[0].warnings[0]).toContain("使用あり");
     },
   );
   it.each(ALLERGENS)(
-    "excludes both explicit unknown and missing %s declaration",
+    "caps both explicit unknown and missing %s declaration at 75",
     (id) => {
       for (const statuses of [{ [id]: "unknown" as const }, {}]) {
         const result = matchRestaurants(
-          [{ ...data.restaurants[0], allergenStatuses: statuses }],
-          [{ ...member, allergies: [id] }],
+          [safeStore("x", { allergenStatuses: statuses })],
+          [{ ...member, allergies: [id], likedCuisines: ["和食"] }],
           "",
           Infinity,
         );
-        expect(result.matches).toHaveLength(0);
-        expect(result.excluded[0].reasons[0]).toContain("未確認");
+        expect(result.matches[0].score).toBeLessThanOrEqual(75);
+        expect(result.matches[0].warnings[0]).toContain("未確認");
       }
     },
   );
-  it("aggregates all group allergies, and reports every exclusion reason", () => {
-    const r = {
-      ...data.restaurants[0],
+  it("aggregates all group allergies and lists every warning", () => {
+    const r = safeStore("x", {
       allergenStatuses: { egg: "used" as const, milk: "unknown" as const },
-    };
+    });
     const result = matchRestaurants(
       [r],
       [
@@ -153,10 +166,48 @@ describe("hard allergy constraints", () => {
       "",
       Infinity,
     );
-    expect(result.matches).toHaveLength(0);
-    expect(result.excluded[0].reasons).toHaveLength(2);
+    expect(result.matches[0].warnings).toHaveLength(2);
   });
-  it("filters area and budget before allergy evaluation", () => {
+  it("ranks a fully safe store above a risky one even with better preferences", () => {
+    const risky = safeStore("risky", {
+      cuisine: "和食",
+      allergenStatuses: { egg: "used" as const },
+    });
+    const safe = safeStore("safe", { cuisine: "洋食" });
+    const result = matchRestaurants(
+      [risky, safe],
+      [{ ...member, allergies: ["egg"], likedCuisines: ["和食"] }],
+      "",
+      Infinity,
+    );
+    expect(result.matches.map((m) => m.restaurant.id)).toEqual([
+      "safe",
+      "risky",
+    ]);
+  });
+  it("counts menus that are safe for everyone out of all menus", () => {
+    const r = safeStore("x", {
+      menus: [
+        menu,
+        { ...menu, id: "b", allergens: ["egg"] },
+        { ...menu, id: "c", allergenReviewStatus: "unconfirmed" as const },
+        { ...menu, id: "d", allergens: ["milk"] },
+      ],
+    });
+    const [m] = matchRestaurants(
+      [r],
+      [
+        { ...member, allergies: ["egg"] },
+        { ...member, id: "second", allergies: ["milk"] },
+      ],
+      "",
+      Infinity,
+    ).matches;
+    expect(m.totalMenus).toBe(4);
+    // 卵の人は2品、乳の人は2品（確認済みで該当なし）→ 最小の2品
+    expect(m.safeMenus).toBe(2);
+  });
+  it("filters area and budget before scoring", () => {
     const result = matchRestaurants(
       data.restaurants,
       data.groups[0].members,
@@ -164,27 +215,53 @@ describe("hard allergy constraints", () => {
       2300,
     );
     expect(
-      [...result.matches, ...result.excluded].every(
+      result.matches.every(
         (x) => x.restaurant.area === "新宿" && x.restaurant.price <= 2300,
       ),
     ).toBe(true);
     expect(result.filteredCount).toBe(1);
+    expect(result.matches).toHaveLength(1);
   });
-  it("does not use unconfirmed menus or menus conflicting with a personal allergy", () => {
-    const r = {
-      ...data.restaurants[0],
-      allergenStatuses: { egg: "not_used" as const },
+  it("supports budget ranges with a lower bound and an open upper bound", () => {
+    const all = (range: { min: number; max?: number }) =>
+      matchRestaurants(data.restaurants, [member], "", range).matches;
+    expect(all({ min: 5000 }).every((m) => m.restaurant.price >= 5000)).toBe(
+      true,
+    );
+    expect(
+      all({ min: 2000, max: 3000 }).every(
+        (m) => m.restaurant.price >= 2000 && m.restaurant.price <= 3000,
+      ),
+    ).toBe(true);
+  });
+  it("flags members without any confirmed safe menu and caps the score", () => {
+    const r = safeStore("x", {
       menus: [
         { ...menu, allergenReviewStatus: "unconfirmed" as const },
         { ...menu, id: "second", allergens: ["egg"] },
       ],
-    };
-    expect(
-      matchRestaurants([r], [{ ...member, allergies: ["egg"] }], "", Infinity)
-        .matches,
-    ).toHaveLength(0);
+    });
+    const [m] = matchRestaurants(
+      [r],
+      [{ ...member, allergies: ["egg"] }],
+      "",
+      Infinity,
+    ).matches;
+    expect(m.warnings.join()).toContain("メニューがありません");
+    expect(m.score).toBeLessThanOrEqual(40);
+    expect(m.safeMenus).toBe(0);
   });
-  it("reconciles confirmed menu/store contradictions and preserves unknown for unconfirmed use", () => {
+  it("adds the requested badge and accommodation match rate to the score", () => {
+    const base = safeStore("a", { cuisine: "和食" });
+    const withBadge = { ...base, id: "b", badges: ["halal"] };
+    const result = matchRestaurants([base, withBadge], [member], "", Infinity, {
+      badges: ["halal"],
+      accommodations: [],
+    });
+    expect(result.matches[0].restaurant.id).toBe("b");
+    expect(result.matches[0].requested).toEqual({ matched: 1, total: 1 });
+    expect(result.matches[1].requested).toEqual({ matched: 0, total: 1 });
+  });  it("reconciles confirmed menu/store contradictions and preserves unknown for unconfirmed use", () => {
     const r = {
       ...data.restaurants[0],
       allergenStatuses: { egg: "not_used" as const, milk: "not_used" as const },

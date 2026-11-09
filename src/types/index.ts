@@ -95,9 +95,10 @@ export interface RestaurantMatch {
   score: number;
   /** 検索で指定したバッジ・対応範囲のうち、満たしている数 */
   requested: { matched: number; total: number };
+  /** 使用あり・未確認などの注意点（空なら注意なし） */
+  warnings: string[];
+  /** 全員のアレルゲンを含まず確認済みのメニュー数（最も少ない人基準）／全メニュー数 */
+  safeMenus: number;
+  totalMenus: number;
   recommendations: Recommendation[];
-}
-export interface ExcludedRestaurant {
-  restaurant: Restaurant;
-  reasons: string[];
 }

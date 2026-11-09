@@ -3,7 +3,6 @@ import type {
   Restaurant,
   UserProfile,
   RestaurantMatch,
-  ExcludedRestaurant,
   Accommodations,
 } from "../types";
 import { SCORE_WEIGHTS as W, allergenLabel } from "../data/constants";
@@ -85,6 +84,12 @@ export function requestedFit(restaurant: Restaurant, wants: SearchWants) {
     ).length;
   return { matched, total };
 }
+/**
+ * 除外はせず、すべてのお店を0〜100のマッチ度で並べる。
+ * 安全性60点（店舗全体の使用状況＋全員に安全なメニューの割合）＋好み25点＋指定条件15点。
+ * 条件を指定しない場合は、条件の15点を好みに回す。
+ * 「使用あり」「全員分のメニューなし」は最高40点、「未確認」は最高75点に抑える。
+ */
 export function matchRestaurants(
   restaurants: Restaurant[],
   members: UserProfile[],
@@ -94,69 +99,93 @@ export function matchRestaurants(
 ) {
   const range: BudgetRange =
     typeof budget === "number" ? { min: 0, max: budget } : budget;
-  const matches: RestaurantMatch[] = [],
-    excluded: ExcludedRestaurant[] = [];
-  if (!members.length) return { matches, excluded, filteredCount: 0 };
+  const matches: RestaurantMatch[] = [];
+  if (!members.length) return { matches, filteredCount: 0 };
   const filtered = restaurants.filter(
-    (r) => (!area || r.area === area) &&
+    (r) =>
+      (!area || r.area === area) &&
       r.price >= range.min &&
       (range.max === undefined || r.price <= range.max),
   );
   const allergies = [...new Set(members.flatMap((m) => m.allergies))];
   for (const restaurant of filtered) {
-    const reasons = allergies.flatMap((id) => {
+    const warnings: string[] = [];
+    let used = false;
+    let unknown = false;
+    const storePoints = allergies.map((id) => {
       const state = restaurant.allergenStatuses[id] ?? "unknown";
-      if (state === "not_used") return [];
+      if (state === "not_used") return 1;
       const names = members
         .filter((m) => m.allergies.includes(id))
         .map((m) => m.nickname)
         .join("・");
-      return [
+      if (state === "used") used = true;
+      else unknown = true;
+      warnings.push(
         `${names}さんの${allergenLabel(id)}アレルギー：店舗全体で${state === "used" ? "使用あり" : "使用状況が未確認"}です。`,
-      ];
-    });
-    // A missing allergen declaration never means absence. Store-wide use is a hard constraint.
-    if (reasons.length) {
-      excluded.push({ restaurant, reasons });
-      continue;
-    }
-    const recommendations = members.map((member) => {
-      const choices = restaurant.menus.filter(
-        (menu) =>
-          menu.allergenReviewStatus === "confirmed" &&
-          !menu.allergens.some((id) => member.allergies.includes(id)),
       );
-      return choices
+      return state === "used" ? 0 : W.unknownStore;
+    });
+    const storeScore = storePoints.length
+      ? storePoints.reduce((a, b) => a + b, 0) / storePoints.length
+      : 1;
+    const totalMenus = restaurant.menus.length;
+    const safeCounts = members.map(
+      (member) =>
+        restaurant.menus.filter(
+          (menu) =>
+            menu.allergenReviewStatus === "confirmed" &&
+            !menu.allergens.some((id) => member.allergies.includes(id)),
+        ).length,
+    );
+    const safeMenus = Math.min(...safeCounts);
+    const safeRatio = totalMenus ? safeMenus / totalMenus : 0;
+    const picks = members.map((member) =>
+      restaurant.menus
+        .filter(
+          (menu) =>
+            menu.allergenReviewStatus === "confirmed" &&
+            !menu.allergens.some((id) => member.allergies.includes(id)),
+        )
         .map((menu) => ({
           member,
           menu,
           ...scoreMenu(menu, member, restaurant.cuisine),
         }))
-        .sort((a, b) => b.score - a.score || a.menu.price - b.menu.price)[0];
-    });
-    if (recommendations.some((r) => !r)) {
-      excluded.push({
-        restaurant,
-        reasons: [
-          "参加者全員に提案できる、アレルゲン情報確認済みのメニューがありません。",
-        ],
-      });
-      continue;
-    }
-    const scores = recommendations.map((r) => r.score);
+        .sort((a, b) => b.score - a.score || a.menu.price - b.menu.price)[0],
+    );
+    const recommendations = picks.filter((p) => p !== undefined);
+    const noMenu = picks.some((p) => !p);
+    if (noMenu)
+      warnings.push(
+        "参加者全員に提案できる、アレルゲン情報確認済みのメニューがありません。",
+      );
+    // メニューがない人は0点として、最低点を下げる。
+    const scores = picks.map((p) => p?.score ?? 0);
     const average = scores.reduce((a, b) => a + b, 0) / scores.length;
-    const base = Math.round(
-      average * W.average + Math.min(...scores) * W.minimum,
+    // 好みの満点（基本点＋好きなジャンル）を100%として換算する。
+    const preference = Math.min(
+      1,
+      (average * W.average + Math.min(...scores) * W.minimum) /
+        (W.base + W.likedCuisine),
     );
     const requested = requestedFit(restaurant, wants);
-    // 指定バッジ・対応範囲は加点のみ。アレルギーの除外条件は緩和しない。
-    const score = requested.total
-      ? Math.round(
-          base * (1 - W.requested) +
-            (requested.matched / requested.total) * 100 * W.requested,
-        )
-      : base;
-    matches.push({ restaurant, recommendations, score, requested });
+    const condition = requested.total ? requested.matched / requested.total : 0;
+    const raw =
+      (storeScore * 0.5 + safeRatio * 0.5) * W.safetyPoints +
+      (requested.total
+        ? preference * W.preferencePoints + condition * W.conditionPoints
+        : preference * (W.preferencePoints + W.conditionPoints));
+    const cap = used || noMenu ? W.usedCap : unknown ? W.unknownCap : 100;
+    matches.push({
+      restaurant,
+      recommendations,
+      score: Math.round(Math.min(raw, cap)),
+      requested,
+      warnings,
+      safeMenus,
+      totalMenus,
+    });
   }
   matches.sort(
     (a, b) =>
@@ -164,9 +193,8 @@ export function matchRestaurants(
       b.restaurant.rating - a.restaurant.rating ||
       a.restaurant.id.localeCompare(b.restaurant.id),
   );
-  return { matches, excluded, filteredCount: filtered.length };
-}
-// Confirmed menu use always wins over a contradictory store-level declaration.
+  return { matches, filteredCount: filtered.length };
+}// Confirmed menu use always wins over a contradictory store-level declaration.
 export function reconcileAllergens(restaurant: Restaurant): Restaurant {
   const statuses = { ...restaurant.allergenStatuses };
   for (const menu of restaurant.menus)

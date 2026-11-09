@@ -336,16 +336,53 @@ export function Recommendations({ match }: { match: RestaurantMatch }) {
     </div>
   );
 }
+/** 全メニューのうち全員に安全なメニューの数と、使用あり・未確認などの注意点。 */
+export function MatchSafety({ match }: { match: RestaurantMatch }) {
+  const { t } = useLocale();
+  return (
+    <div className="match-safety">
+      <p className="small">
+        {t("全メニュー")}
+        {match.totalMenus}
+        {t("品中")}
+        <strong>{match.safeMenus}</strong>
+        {t("品が、全員のアレルゲンを含まない確認済みメニューです")}
+      </p>
+      {match.warnings.length > 0 ? (
+        <details>
+          <summary className="small">
+            <AlertTriangle size={13} />
+            {t("要確認")} {match.warnings.length}
+            {t("件")}
+          </summary>
+          {match.warnings.map((w) => (
+            <p className="small" key={w}>
+              {t(w)}
+            </p>
+          ))}
+        </details>
+      ) : (
+        <p className="small green-text">
+          <Check size={13} />
+          {t("店舗全体のアレルゲン：全員分が不使用確認済み")}
+        </p>
+      )}
+    </div>
+  );
+}
 export function RestaurantCard({
   match,
   rank,
   groupId,
   onSelect,
+  decide,
 }: {
   match: RestaurantMatch;
   rank: number;
   groupId?: string;
   onSelect?: () => void;
+  /** 注意点があるお店で、確認ダイアログ付きの決定ボタンに差し替える */
+  decide?: ReactNode;
 }) {
   const { t } = useLocale();
   const { restaurant: r } = match;
@@ -359,11 +396,13 @@ export function RestaurantCard({
         <span className={`card-label ${rank === 0 ? "top" : ""}`}>
           <Check size={13} />
           {t(
-            rank === 0
-              ? groupId
-                ? "みんなに一番おすすめ"
-                : "あなたに一番おすすめ"
-              : "アレルギー登録条件に一致",
+            match.warnings.length > 0
+              ? "アレルギー情報に要確認あり"
+              : rank === 0
+                ? groupId
+                  ? "みんなに一番おすすめ"
+                  : "あなたに一番おすすめ"
+                : "アレルギー登録条件に一致",
           )}
         </span>
         <span className="image-count">
@@ -406,7 +445,7 @@ export function RestaurantCard({
         <div className="card-score">
           <span>
             {t(groupId ? "みんなの" : "あなたの")}
-            {t("おすすめ度")}
+            {t("マッチ度")}
           </span>
           <strong>
             {match.score}
@@ -416,6 +455,7 @@ export function RestaurantCard({
         <div className="score-track">
           <span style={{ width: `${match.score}%` }} />
         </div>
+        <MatchSafety match={match} />
         <p className="card-reason">
           {t(
             match.recommendations.filter((rec) =>
@@ -445,13 +485,12 @@ export function RestaurantCard({
             </div>
           </details>
         </div>
-        {t(
-          groupId && (
+        {groupId &&
+          (decide ?? (
             <button className="card-decide" onClick={onSelect}>
               {t("このお店に決定")}
             </button>
-          ),
-        )}
+          ))}
       </div>
     </article>
   );

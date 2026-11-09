@@ -45,7 +45,7 @@ import {
 } from "../lib/foodInput";
 import type { Worker } from "tesseract.js";
 import { reconcileAllergens } from "../lib/matching";
-import { AllergenPanel, Empty, FoodImage, yen } from "../components/ui";
+import { AllergenPanel, Empty, FoodImage, Tags, yen } from "../components/ui";
 import { IngredientPicker } from "../components/IngredientPicker";
 import { PhotoUpload } from "../components/PhotoUpload";
 const steps = [
@@ -1092,8 +1092,7 @@ export default function RestaurantForm() {
                 "対応できる項目を選んでください。選んだバッジはお店のカードに表示され、お客様の検索条件との一致に使われます。",
               )}
             </p>
-            <IngredientPicker
-              label={t("お店のバッジ")}
+            <Tags
               options={BADGES}
               selected={r.badges ?? []}
               onChange={(badges) => set("badges", badges)}

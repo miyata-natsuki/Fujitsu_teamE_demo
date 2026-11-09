@@ -26,6 +26,7 @@ import {
   AllergenPanel,
   Empty,
   FoodImage,
+  MatchSafety,
   Notice,
   Recommendations,
   yen,
@@ -42,8 +43,8 @@ export default function Detail() {
   const members = group?.members ?? [data.profile];
   const result = matchRestaurants([r], members, "", Infinity);
   const match = result.matches[0];
-  const choose = (force = false) => {
-    if (!group || (!match && !force)) return;
+  const choose = () => {
+    if (!group) return;
     if (
       update((d) => ({
         ...d,
@@ -272,24 +273,29 @@ export default function Detail() {
             {match ? (
               <>
                 <div className="detail-score">
-                  <span>{t("おすすめ度")}</span>
+                  <span>{t("マッチ度")}</span>
                   <strong>
                     {match.score}
                     <small>{t("%")}</small>
                   </strong>
                 </div>
-                <p className="with-icon green-text">
-                  <Check size={16} />
-                  {t("登録されたアレルギー条件に一致")}
-                </p>
+                <MatchSafety match={match} />
                 <Recommendations match={match} />
                 {group ? (
-                  <button
-                    className="button primary full-width"
-                    onClick={() => choose()}
-                  >
-                    {t("このお店に決定")}
-                  </button>
+                  match.warnings.length > 0 ? (
+                    <ForceDecideButton
+                      name={r.name}
+                      reasons={match.warnings}
+                      onConfirm={() => choose()}
+                    />
+                  ) : (
+                    <button
+                      className="button primary full-width"
+                      onClick={() => choose()}
+                    >
+                      {t("このお店に決定")}
+                    </button>
+                  )
                 ) : (
                   <Link className="button primary full-width" to="/groups/new">
                     {t("グループを作って探す")}
@@ -297,25 +303,12 @@ export default function Detail() {
                 )}
               </>
             ) : (
-              <>
-                <h3>{t("検索候補から除外されています")}</h3>
-                {result.excluded[0]?.reasons.map((reason) => (
-                  <p className="small" key={reason}>
-                    {t(reason)}
-                  </p>
-                ))}
-                {group && (
-                  <ForceDecideButton
-                    name={r.name}
-                    reasons={result.excluded[0]?.reasons ?? []}
-                    onConfirm={() => choose(true)}
-                  />
-                )}
-              </>
-            )}
-            <p className="small muted">
+              <p className="small">
+                {t("メンバーがいないため、マッチ度を計算できません。")}
+              </p>
+            )}            <p className="small muted">
               {t(
-                "おすすめ度は好みに基づく目安です。アレルギーの安全性を示す数値ではありません。",
+                "マッチ度は、アレルギー情報と好みに基づく目安です。安全性を保証するものではありません。",
               )}
             </p>
           </div>
@@ -378,10 +371,11 @@ export function Decision() {
         <section className="form-card">
           <h2>{t("みんなにおすすめの一皿")}</h2>
           <p className="muted small">
-            {t("グループのおすすめ度")}
+            {t("グループのマッチ度")}
             {match.score}
-            {t("% · 好みに基づく目安")}
+            {t("% · アレルギー情報と好みに基づく目安")}
           </p>
+          <MatchSafety match={match} />
           <Recommendations match={match} />
         </section>
       ) : (

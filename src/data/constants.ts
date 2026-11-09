@@ -91,7 +91,13 @@ export const SCORE_WEIGHTS = {
   dislikedIngredientCap: 40,
   likedCuisine: 15,
   dislikedCuisine: -15,
-  requested: 0.3,
+  // マッチ度の配点（100点満点）と、安全上の上限
+  safetyPoints: 60,
+  preferencePoints: 25,
+  conditionPoints: 15,
+  unknownStore: 0.4,
+  usedCap: 40,
+  unknownCap: 75,
   average: 0.7,
   minimum: 0.3,
 };
