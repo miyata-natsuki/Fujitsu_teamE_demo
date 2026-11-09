@@ -9,8 +9,30 @@ import {
   allergenLabel,
   STATUS_LABELS,
   SAFETY_NOTICE,
+  AVAILABILITY_LABELS,
+  ACCOMMODATION_ITEMS,
 } from "../data/constants";
 export const yen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
+export function AccommodationPanel({ restaurant }: { restaurant: Restaurant }) {
+  const { t } = useLocale();
+  const a = restaurant.accommodations;
+  return (
+    <div className="contact-note">
+      <strong>{t("アレルギーへの対応範囲")}</strong>
+      <ul className="plain-list">
+        {ACCOMMODATION_ITEMS.map(([key, label]) => (
+          <li key={key}>
+            {t(label)}：{t(AVAILABILITY_LABELS[a?.[key] ?? "unknown"])}
+          </li>
+        ))}
+      </ul>
+      {a?.note && <p className="small">{a.note}</p>}
+      <p className="small muted">
+        {t("対応内容は予約前に店舗へ直接ご確認ください。")}
+      </p>
+    </div>
+  );
+}
 export function FoodImage({
   src,
   alt,
