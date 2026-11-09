@@ -3149,3 +3149,72 @@ html[lang="en"] .mini-steps {
     display: none;
   }
 }
+
+/* 店舗バッジ（丸型） */
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 8px 0;
+}
+.badge-circle {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 50%;
+  text-align: center;
+  font-weight: 800;
+  line-height: 1.2;
+  transition:
+    opacity 0.15s,
+    filter 0.15s;
+}
+.badge-circle.md {
+  width: 108px;
+  height: 108px;
+  padding: 8px;
+  font-size: 12px;
+}
+.badge-circle.sm {
+  width: 76px;
+  height: 76px;
+  padding: 6px;
+  font-size: 9.5px;
+}
+.badge-circle.off {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+.badge-check {
+  position: absolute;
+  right: 2px;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #2fb36d;
+  color: #fff;
+  border: 2px solid #fff;
+}
+.badge-circle.sm .badge-check {
+  width: 18px;
+  height: 18px;
+  right: 0;
+  bottom: 3px;
+}
+.badge-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.badge-button:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 2px;
+}

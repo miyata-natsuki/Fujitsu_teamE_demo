@@ -76,11 +76,11 @@ export const budgetLabel = (r: { min: number; max?: number }) =>
     ? `${r.min.toLocaleString("ja-JP")}円以上`
     : `${r.min.toLocaleString("ja-JP")}円～${r.max.toLocaleString("ja-JP")}円`;
 export const BADGES = [
-  ["halal", "ハラール対応可"],
-  ["removal", "除去対応可"],
+  ["halal", "ハラール対応"],
+  ["removal", "アレルギー除去対応可"],
   ["vegetarian", "ベジタリアン対応"],
   ["vegan", "ヴィーガン対応"],
-  ["gluten_free", "グルテンフリー対応"],
+  ["gluten_free", "グルテンフリー対応可"],
   ["kids_allergy", "アレルギー対応メニューあり"],
 ] as const;
 export const badgeLabel = (id: string) =>

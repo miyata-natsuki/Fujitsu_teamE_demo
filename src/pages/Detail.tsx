@@ -101,7 +101,7 @@ export default function Detail() {
         <div>
           <section className="detail-section">
             <h2>{t("季節のおいしさを、気負わずに。")}</h2>
-            <BadgeList restaurant={r} />
+            <BadgeList restaurant={r} size="md" />
             <p>{t(r.description)}</p>
             <p className="with-icon muted">
               <Clock size={18} />

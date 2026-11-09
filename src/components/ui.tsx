@@ -1,5 +1,18 @@
 import { useLocale } from "../hooks/useLocale";
-import { AlertTriangle, Check, Utensils, X, Star } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  Utensils,
+  X,
+  Star,
+  Salad,
+  Leaf,
+  EggOff,
+  WheatOff,
+  MoonStar,
+  ChefHat,
+  type LucideIcon,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, type ReactNode } from "react";
@@ -14,21 +27,89 @@ import {
   badgeLabel,
 } from "../data/constants";
 export const yen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`;
-export function BadgeList({ restaurant }: { restaurant: Restaurant }) {
+const BADGE_STYLES: Record<string, { Icon: LucideIcon; bg: string; fg: string }> =
+  {
+    vegetarian: { Icon: Salad, bg: "#e2f4d6", fg: "#1f6b34" },
+    vegan: { Icon: Leaf, bg: "#d6f0ea", fg: "#18795f" },
+    removal: { Icon: EggOff, bg: "#fcefcb", fg: "#7a4a1d" },
+    gluten_free: { Icon: WheatOff, bg: "#d9e9fb", fg: "#1f4f8f" },
+    halal: { Icon: MoonStar, bg: "#e6e0f7", fg: "#2f7d56" },
+    kids_allergy: { Icon: ChefHat, bg: "#fbe0e6", fg: "#9b2c4a" },
+  };
+/** 丸いバッジ。checked=false のときはグレーで表示する（店舗の選択画面用）。 */
+export function BadgeIcon({
+  id,
+  size = "md",
+  checked = true,
+}: {
+  id: string;
+  size?: "sm" | "md";
+  checked?: boolean;
+}) {
   const { t } = useLocale();
+  const style = BADGE_STYLES[id] ?? BADGE_STYLES.kids_allergy;
+  return (
+    <span
+      className={`badge-circle ${size} ${checked ? "" : "off"}`}
+      style={{ background: style.bg, color: style.fg }}
+    >
+      <style.Icon size={size === "sm" ? 22 : 34} aria-hidden="true" />
+      <span className="badge-label">{t(badgeLabel(id))}</span>
+      {checked && (
+        <span className="badge-check" aria-hidden="true">
+          <Check size={size === "sm" ? 11 : 15} strokeWidth={3} />
+        </span>
+      )}
+    </span>
+  );
+}
+export function BadgeList({
+  restaurant,
+  size = "sm",
+}: {
+  restaurant: Restaurant;
+  size?: "sm" | "md";
+}) {
   if (!restaurant.badges?.length) return null;
   return (
-    <div className="tags">
+    <div className="badge-row">
       {restaurant.badges.map((id) => (
-        <span className="tag" key={id}>
-          <Check size={12} />
-          {t(badgeLabel(id))}
-        </span>
+        <BadgeIcon id={id} size={size} key={id} />
       ))}
     </div>
   );
 }
-/** メニューごとの対応範囲（食材を抜く、器具を分ける等）。未設定は「未確認」。 */
+/** 店舗がチェックを付けて選ぶ、丸いバッジの選択UI。 */
+export function BadgePicker({
+  options,
+  selected,
+  onChange,
+}: {
+  options: readonly (readonly [string, string])[];
+  selected: string[];
+  onChange: (values: string[]) => void;
+}) {
+  return (
+    <div className="badge-row">
+      {options.map(([id]) => {
+        const on = selected.includes(id);
+        return (
+          <button
+            type="button"
+            className="badge-button"
+            key={id}
+            aria-pressed={on}
+            onClick={() =>
+              onChange(on ? selected.filter((v) => v !== id) : [...selected, id])
+            }
+          >
+            <BadgeIcon id={id} size="md" checked={on} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}/** メニューごとの対応範囲（食材を抜く、器具を分ける等）。未設定は「未確認」。 */
 export function MenuAccommodations({ menu }: { menu: MenuItem }) {
   const { t } = useLocale();
   const a = menu.accommodations;
