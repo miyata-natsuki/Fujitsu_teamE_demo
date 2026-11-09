@@ -80,6 +80,17 @@ export const STATUS_LABELS = {
   not_used: "不使用確認済み",
   unknown: "未確認",
 };
+export const AVAILABILITY_LABELS = {
+  possible: "対応可能",
+  conditional: "条件付きで対応可能",
+  impossible: "対応不可",
+  unknown: "未確認",
+};
+export const ACCOMMODATION_ITEMS = [
+  ["removeIngredients", "食材を抜く（除去対応）"],
+  ["separateUtensils", "調理器具・食器を分ける"],
+  ["separateFryer", "揚げ油・フライヤーを分ける"],
+] as const;
 export const allergenLabel = (id: string) =>
   ALLERGENS.find((a) => a[0] === id)?.[1] ?? id;
 export const SAFETY_NOTICE =
