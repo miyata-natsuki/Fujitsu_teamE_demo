@@ -8,12 +8,29 @@ export interface UserProfile {
   likedCuisines: string[];
   dislikedCuisines: string[];
 }
+export interface Reservation {
+  restaurantId: string;
+  date: string;
+  time: string;
+  people: number;
+  name: string;
+  note: string;
+}
 export interface Group {
   id: string;
   name: string;
   hostId: string;
   members: UserProfile[];
   selectedRestaurantId?: string;
+  reservation?: Reservation;
+}
+export type Availability = "possible" | "conditional" | "impossible" | "unknown";
+/** 店舗が対応できる範囲（未設定の古いデータはすべて未確認として扱う） */
+export interface Accommodations {
+  removeIngredients: Availability;
+  separateUtensils: Availability;
+  separateFryer: Availability;
+  note: string;
 }
 export interface MenuItem {
   id: string;
@@ -45,6 +62,7 @@ export interface Restaurant {
   rating: number;
   allergenStatuses: Partial<Record<string, AllergenStatus>>;
   crossContactInfo: string;
+  accommodations?: Accommodations;
   menus: MenuItem[];
   reviews: Review[];
 }
