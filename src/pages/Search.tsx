@@ -355,7 +355,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
                 {reasons.map((reason) => (
                   <p key={reason}>{t(reason)}</p>
                 ))}
-                {!personal && group && (
+                {group && (
                   <ForceDecideButton
                     name={r.name}
                     reasons={reasons}
