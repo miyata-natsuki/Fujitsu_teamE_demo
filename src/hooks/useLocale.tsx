@@ -36,12 +36,12 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = locale === "zh" ? "zh-Hans" : locale;
     document.title =
       locale === "ja"
-        ? "mogu — おいしい時間を、みんなで。"
+        ? "MinaTable! — いただきますを、全員で。"
         : locale === "en"
-          ? "mogu — Good food, together."
+          ? "MinaTable! — Let's dig in, all together."
           : locale === "zh"
-            ? "mogu — 一起享受美食。"
-            : "mogu — 함께, 맛있게.";
+            ? "MinaTable! — 开动吧，大家一起。"
+            : "MinaTable! — 잘 먹겠습니다, 모두 함께.";
   }, [locale]);
   useEffect(() => {
     const sync = (e: StorageEvent) => {

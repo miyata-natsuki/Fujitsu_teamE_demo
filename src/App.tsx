@@ -53,7 +53,7 @@ function Shell() {
     <>
       <header className="site-header">
         <div className="header-inner">
-          <Link className="brand" to="/" aria-label={t("mogu ホーム")}>
+          <Link className="brand" to="/" aria-label={t("MinaTable! ホーム")}>
             <svg viewBox="0 0 36 36" aria-hidden="true">
               <path
                 d="M4 12v12c0 5 7 5 7 0V14c0-5 7-5 7 0v10c0 5 7 5 7 0V14c0-5 7-5 7 0v14"
@@ -63,7 +63,7 @@ function Shell() {
                 strokeLinecap="round"
               />
             </svg>
-            <span>{t("mogu")}</span>
+            <span>{t("MinaTable!")}</span>
             <small>{t("みんなで、おいしく。")}</small>
           </Link>
           <nav className={menuOpen ? "open" : ""}>
@@ -153,7 +153,7 @@ function Shell() {
       </main>
       <footer className="site-footer">
         <Link className="footer-brand" to="/">
-          {t("mogu")}
+          {t("MinaTable!")}
           <span>{t("みんなの「食べたい」が、ひとつになる。")}</span>
         </Link>
         <span>{t("ハッカソンデモ · 店舗・人物・情報は架空です")}</span>

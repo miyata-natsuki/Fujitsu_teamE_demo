@@ -100,7 +100,7 @@ export const TRANSLATIONS: Record<string, readonly [string, string, string]> = {
     "需确认的过敏食材",
     "확인할 알레르기 식재료",
   ],
-  "mogu ホーム": ["mogu home", "mogu 首页", "mogu 홈"],
+  "MinaTable! ホーム": ["MinaTable! home", "MinaTable! 首页", "MinaTable! 홈"],
   "みんなで、おいしく。": [
     "Good food, together.",
     "一起享受美食。",
@@ -296,8 +296,8 @@ export const TRANSLATIONS: Record<string, readonly [string, string, string]> = {
   "決定したお店：": ["Chosen restaurant: ", "已选餐厅：", "선택한 식당: "],
   "参加者・招待": ["Members & invite", "成员与邀请", "참여자·초대"],
   渋谷: ["Shibuya", "涩谷", "시부야"],
-  "おいしい時間を、": ["Good food, ", "美好用餐时光，", "맛있는 시간을, "],
-  "みんなで。": ["together.", "一起分享。", "함께."],
+  "いただきますを、": ["Let's dig in, ", "开动吧，", "잘 먹겠습니다, "],
+  "全員で。": ["all together.", "大家一起。", "모두 함께."],
   "みんなの「好き」で、お店を探そう。": [
     "Find a restaurant everyone will love.",
     "根据大家的喜好寻找餐厅。",

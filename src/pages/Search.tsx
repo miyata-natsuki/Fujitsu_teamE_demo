@@ -107,9 +107,9 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
             {t(
               home ? (
                 <>
-                  {t("おいしい時間を、")}
+                  {t("いただきますを、")}
                   <br className="mobile-break" />
-                  <span>{t("みんなで。")}</span>
+                  <span>{t("全員で。")}</span>
                 </>
               ) : (
                 "みんなの「好き」で、お店を探そう。"
