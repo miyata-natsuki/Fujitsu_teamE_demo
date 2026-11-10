@@ -328,6 +328,7 @@ export const TRANSLATIONS: Record<string, readonly [string, string, string]> = {
   ひとりで探す: ["Search for myself", "自己找餐厅", "혼자 찾기"],
   エリア: ["Area", "地区", "지역"],
   すべてのエリア: ["All areas", "所有地区", "모든 지역"],
+  すべての価格帯: ["All price ranges", "所有价格区间", "모든 가격대"],
   "予算・1人あたり": ["Budget per person", "人均预算", "1인당 예산"],
   予算上限: ["Maximum budget", "预算上限", "예산 상한"],
   まで: [" or less", " 以下", " 이하"],

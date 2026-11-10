@@ -68,15 +68,18 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
   const [cuisine, setCuisine] = useState("");
   const [searched, setSearched] = useState(false);
   const appliedArea = params.get("area") ?? "渋谷";
+  const budgetParam = params.get("budget") || "3000-5000";
+  // "all" は価格帯を指定しない（すべての価格帯を表示）
   const appliedRange =
-    BUDGET_RANGES.find((b) => b.id === (params.get("budget") || "3000-5000")) ??
-    BUDGET_RANGES[3];
+    budgetParam === "all"
+      ? undefined
+      : (BUDGET_RANGES.find((b) => b.id === budgetParam) ?? BUDGET_RANGES[3]);
   const wants = { badges: list("badges"), accommodations: list("accom") };
   const result = matchRestaurants(
     data.restaurants,
     members,
     appliedArea,
-    appliedRange,
+    appliedRange ?? Infinity,
     wants,
   );
   const matches = result.matches.filter(
@@ -163,6 +166,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
               value={budget}
               onChange={(e) => setBudget(e.target.value)}
             >
+              <option value="all">{t("すべての価格帯")}</option>
               {BUDGET_RANGES.map((b) => (
                 <option key={b.id} value={b.id}>
                   {t(budgetLabel(b))}
@@ -317,7 +321,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
             <p>
               {t(appliedArea || "すべてのエリア")}
               {t("·")}
-              {t(budgetLabel(appliedRange))}
+              {t(appliedRange ? budgetLabel(appliedRange) : "すべての価格帯")}
               {t(" · マッチ度の高い順（除外はせず、すべて表示）")}
             </p>
           </div>
