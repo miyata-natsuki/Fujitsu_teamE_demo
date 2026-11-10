@@ -92,9 +92,15 @@ export const SCORE_WEIGHTS = {
   likedCuisine: 15,
   dislikedCuisine: -15,
   // マッチ度の配点（100点満点）と、安全上の上限
+  // 条件を指定しない場合：安全60＋好み40
   safetyPoints: 60,
-  preferencePoints: 25,
-  conditionPoints: 15,
+  preferencePoints: 40,
+  // こだわり条件を指定した場合：安全50＋好み20＋条件30
+  safetyPointsWithWants: 50,
+  preferencePointsWithWants: 20,
+  conditionPoints: 30,
+  // 安全点のうち、店舗全体の使用状況の割合（残りは安全なメニューの割合）
+  storeShare: 0.3,
   unknownStore: 0.4,
   usedCap: 40,
   unknownCap: 75,

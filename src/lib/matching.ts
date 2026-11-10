@@ -86,8 +86,9 @@ export function requestedFit(restaurant: Restaurant, wants: SearchWants) {
 }
 /**
  * 除外はせず、すべてのお店を0〜100のマッチ度で並べる。
- * 安全性60点（店舗全体の使用状況＋全員に安全なメニューの割合）＋好み25点＋指定条件15点。
- * 条件を指定しない場合は、条件の15点を好みに回す。
+ * 条件を指定しない場合：安全性60点＋好み40点。
+ * こだわり条件を指定した場合：安全性50点＋好み20点＋指定条件30点。
+ * 安全性は、店舗全体の使用状況（3割）と全員に安全なメニューの割合（7割）で決まる。
  * 「使用あり」「全員分のメニューなし」は最高40点、「未確認」は最高75点に抑える。
  */
 export function matchRestaurants(
@@ -171,11 +172,13 @@ export function matchRestaurants(
     );
     const requested = requestedFit(restaurant, wants);
     const condition = requested.total ? requested.matched / requested.total : 0;
-    const raw =
-      (storeScore * 0.5 + safeRatio * 0.5) * W.safetyPoints +
-      (requested.total
-        ? preference * W.preferencePoints + condition * W.conditionPoints
-        : preference * (W.preferencePoints + W.conditionPoints));
+    const safety =
+      storeScore * W.storeShare + safeRatio * (1 - W.storeShare);
+    const raw = requested.total
+      ? safety * W.safetyPointsWithWants +
+        preference * W.preferencePointsWithWants +
+        condition * W.conditionPoints
+      : safety * W.safetyPoints + preference * W.preferencePoints;
     const cap = used || noMenu ? W.usedCap : unknown ? W.unknownCap : 100;
     matches.push({
       restaurant,

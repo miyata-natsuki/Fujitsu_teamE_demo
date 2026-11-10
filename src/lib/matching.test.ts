@@ -261,6 +261,23 @@ describe("match score without exclusion", () => {
     expect(result.matches[0].restaurant.id).toBe("b");
     expect(result.matches[0].requested).toEqual({ matched: 1, total: 1 });
     expect(result.matches[1].requested).toEqual({ matched: 0, total: 1 });
+    // 条件が1つも合わない店舗は、安全50＋好み20 の70点が上限
+    expect(result.matches[1].score).toBeLessThanOrEqual(70);
+    expect(result.matches[0].score).toBeGreaterThan(result.matches[1].score);
+  });
+  it("lowers the safety points in proportion to the share of safe menus", () => {
+    const bad = (id: string) => ({ ...menu, id, allergens: ["egg"] });
+    const r = safeStore("x", {
+      menus: [menu, bad("b"), bad("c"), bad("d")],
+    });
+    const all = safeStore("y", { menus: [menu, menu, menu, menu] });
+    const members = [{ ...member, allergies: ["egg"] }];
+    const [low] = matchRestaurants([r], members, "", Infinity).matches;
+    const [high] = matchRestaurants([all], members, "", Infinity).matches;
+    expect(low.safeMenus).toBe(1);
+    expect(high.score).toBeGreaterThan(low.score);
+    // 安全なメニュー1/4 → 安全点 60×(0.3＋0.7×0.25)
+    expect(low.score).toBeLessThan(80);
   });  it("reconciles confirmed menu/store contradictions and preserves unknown for unconfirmed use", () => {
     const r = {
       ...data.restaurants[0],
