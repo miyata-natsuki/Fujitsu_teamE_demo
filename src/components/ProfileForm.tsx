@@ -90,9 +90,13 @@ export function ProfileForm({
               options={ALLERGENS}
               selected={profile.allergies}
               onChange={(v) => set("allergies", v)}
+              allowCustom
             />
             <p className="small muted">
               {t("選択なしは「登録なし」として扱います。")}
+              {t(
+                "候補にないアレルギーは自由に入力して追加できます（お店の使用状況は「未確認」として扱います）。",
+              )}
             </p>
           </section>
           <div className="notice compact">
@@ -111,6 +115,7 @@ export function ProfileForm({
               selected={profile.dislikedIngredients ?? []}
               onChange={(v) => set("dislikedIngredients", v)}
               tone="gray"
+              allowCustom
             />
           </section>
           <section className="form-section">

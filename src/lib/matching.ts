@@ -5,7 +5,22 @@ import type {
   RestaurantMatch,
   Accommodations,
 } from "../types";
-import { SCORE_WEIGHTS as W, allergenLabel } from "../data/constants";
+import {
+  SCORE_WEIGHTS as W,
+  AREA_STATIONS,
+  allergenLabel,
+} from "../data/constants";
+/**
+ * エリア名・駅名・住所での検索。空白で区切った語がすべて含まれるお店が対象。
+ * 例：「渋谷」「渋谷駅」「渋谷 神泉」。空なら全エリア。
+ */
+export function areaMatches(restaurant: Restaurant, query: string) {
+  const words = query.split(/[\s　]+/).filter(Boolean);
+  if (!words.length) return true;
+  const station = restaurant.station ?? AREA_STATIONS[restaurant.area]?.[0] ?? "";
+  const text = `${restaurant.area} ${station} ${restaurant.address}`;
+  return words.every((w) => text.includes(w));
+}
 export function allergyImpact(restaurant: Restaurant, members: UserProfile[]) {
   const allergies = [...new Set(members.flatMap((member) => member.allergies))];
   const menus = restaurant.menus.map((menu) => ({
@@ -42,8 +57,9 @@ export function scoreMenu(
   let score = W.base;
   const reasons: string[] = [];
   if (menu.ingredients) {
+    // 自由記述の苦手な食材にも対応するため、部分一致（例：「牛」→「牛肉」）で照合する。
     const disliked = (member.dislikedIngredients ?? []).filter((i) =>
-      menu.ingredients!.includes(i),
+      menu.ingredients!.some((ing) => ing.includes(i) || i.includes(ing)),
     );
     score -= Math.min(
       disliked.length * -W.dislikedIngredient,
@@ -104,7 +120,7 @@ export function matchRestaurants(
   if (!members.length) return { matches, filteredCount: 0 };
   const filtered = restaurants.filter(
     (r) =>
-      (!area || r.area === area) &&
+      areaMatches(r, area) &&
       r.price >= range.min &&
       (range.max === undefined || r.price <= range.max),
   );

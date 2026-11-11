@@ -1,6 +1,6 @@
 import { useLocale } from "../hooks/useLocale";
 import { useId, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import { Tags, SelectionActions } from "./ui";
 import { foodSearchMatch } from "../lib/foodInput";
 export function IngredientPicker({
@@ -10,6 +10,7 @@ export function IngredientPicker({
   label,
   tone = "coral",
   allowSelectAll = false,
+  allowCustom = false,
 }: {
   options: readonly (string | readonly [string, string])[];
   selected: string[];
@@ -17,11 +18,24 @@ export function IngredientPicker({
   label: string;
   tone?: string;
   allowSelectAll?: boolean;
+  /** 候補にない食材を自由記述で追加できる */
+  allowCustom?: boolean;
 }) {
   const { t } = useLocale();
   const [query, setQuery] = useState("");
   const id = useId();
   const entries = options.map((o) => (typeof o === "string" ? [o, o] : [...o]));
+  const typed = query.trim();
+  const hasExact = entries.some(([value, text]) => value === typed || text === typed);
+  const canAddCustom = allowCustom && !!typed && !hasExact && !selected.includes(typed);
+  const addTyped = () => {
+    if (!typed) return;
+    const exact = entries.find(([value, text]) => value === typed || text === typed);
+    const value = exact ? exact[0] : allowCustom ? typed : null;
+    if (value === null || selected.includes(value)) return;
+    onChange([...selected, value]);
+    setQuery("");
+  };
   const filtered = entries.filter(
     ([value, text]) =>
       !selected.includes(value) && foodSearchMatch(value, text, query),
@@ -50,10 +64,29 @@ export function IngredientPicker({
           id={id}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={t(`${label}を検索（例：えび、たまご）`)}
+          onKeyDown={(e) => {
+            // Enterでフォーム全体が送信されないようにし、入力中の食材を追加する
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              addTyped();
+            }
+          }}
+          maxLength={allowCustom ? 30 : undefined}
+          placeholder={t(
+            allowCustom
+              ? "検索、または自由に入力して追加"
+              : `${label}を検索（例：えび、たまご）`,
+          )}
           autoComplete="off"
         />
       </label>
+      {canAddCustom && (
+        <button type="button" className="button secondary" onClick={addTyped}>
+          <Plus size={16} />
+          {t("自由記述で追加：")}
+          {typed}
+        </button>
+      )}
       <div className="selected-ingredients" aria-live="polite">
         {selected.length ? (
           selected.map((value) => (

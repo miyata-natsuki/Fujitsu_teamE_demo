@@ -63,6 +63,12 @@ export const CUISINES = [
   "エスニック",
 ];
 export const AREAS = ["渋谷", "新宿", "池袋"];
+/** エリアごとの最寄り駅（デモ用。駅名での検索に使う） */
+export const AREA_STATIONS: Record<string, string[]> = {
+  渋谷: ["渋谷駅", "神泉駅", "代官山駅"],
+  新宿: ["新宿駅", "新宿三丁目駅", "西新宿駅"],
+  池袋: ["池袋駅", "大塚駅", "目白駅"],
+};
 /** 予算の範囲（max なしは「〜円以上」） */
 export const BUDGET_RANGES: { id: string; min: number; max?: number }[] = [
   { id: "0-1000", min: 0, max: 1000 },

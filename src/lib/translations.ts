@@ -329,6 +329,18 @@ export const TRANSLATIONS: Record<string, readonly [string, string, string]> = {
   エリア: ["Area", "地区", "지역"],
   すべてのエリア: ["All areas", "所有地区", "모든 지역"],
   すべての価格帯: ["All price ranges", "所有价格区间", "모든 가격대"],
+  履歴: ["Recent", "历史", "기록"],
+  "自由記述で追加：": ["Add your own: ", "自由添加：", "직접 입력해 추가: "],
+  "検索、または自由に入力して追加": [
+    "Search, or type to add your own",
+    "搜索，或自由输入添加",
+    "검색하거나 직접 입력해 추가",
+  ],
+  "候補にないアレルギーは自由に入力して追加できます（お店の使用状況は「未確認」として扱います）。": [
+    " You can type any allergy that is not listed (restaurants' use of it is treated as unconfirmed).",
+    "未列出的过敏原可自由输入添加（店铺的使用情况将视为“未确认”）。",
+    " 목록에 없는 알레르기는 직접 입력해 추가할 수 있습니다(가게의 사용 여부는 '미확인'으로 처리됩니다).",
+  ],
   "予算・1人あたり": ["Budget per person", "人均预算", "1인당 예산"],
   予算上限: ["Maximum budget", "预算上限", "예산 상한"],
   まで: [" or less", " 以下", " 이하"],

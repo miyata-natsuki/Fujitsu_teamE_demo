@@ -22,7 +22,6 @@ import {
 import { useStore } from "../hooks/useStore";
 import { ForceDecideButton } from "../components/ForceDecideButton";
 import {
-  AREAS,
   BUDGET_RANGES,
   BADGES,
   ACCOMMODATION_ITEMS,
@@ -32,6 +31,11 @@ import {
 } from "../data/constants";
 import { matchRestaurants } from "../lib/matching";
 import { RestaurantCard, Notice, Empty } from "../components/ui";
+import {
+  AreaCombobox,
+  loadAreaHistory,
+  saveAreaHistory,
+} from "../components/AreaCombobox";
 const cuisineIcons = [
   Fish,
   Utensils,
@@ -49,12 +53,15 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
   const { data, update } = useStore();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const personal = params.get("mode") === "personal";
+  // 何も指定がなければ「ひとり」。グループ指定（group / mode=group）があればグループ。
+  const personal =
+    params.get("mode") === "personal" ||
+    (!params.get("mode") && !params.get("group"));
   const selectedGroup = params.get("group") || data.groups[0]?.id;
   const group = data.groups.find((g) => g.id === selectedGroup);
   const members = personal ? [data.profile] : (group?.members ?? []);
-  const [area, setArea] = useState(params.get("area") ?? "渋谷");
-  const [budget, setBudget] = useState(params.get("budget") || "3000-5000");
+  const [area, setArea] = useState(params.get("area") ?? "");
+  const [budget, setBudget] = useState(params.get("budget") || "all");
   const list = (key: string) => params.get(key)?.split(",").filter(Boolean) ?? [];
   const toggleWant = (key: "badges" | "accom", v: string) =>
     setParams((p) => {
@@ -67,8 +74,9 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
     });
   const [cuisine, setCuisine] = useState("");
   const [searched, setSearched] = useState(false);
-  const appliedArea = params.get("area") ?? "渋谷";
-  const budgetParam = params.get("budget") || "3000-5000";
+  const [areaHistory, setAreaHistory] = useState(loadAreaHistory);
+  const appliedArea = params.get("area") ?? "";
+  const budgetParam = params.get("budget") || "all";
   // "all" は価格帯を指定しない（すべての価格帯を表示）
   const appliedRange =
     budgetParam === "all"
@@ -132,10 +140,12 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           e.preventDefault();
           setParams((p) => {
             const next = new URLSearchParams(p);
-            next.set("area", area);
+            if (area.trim()) next.set("area", area.trim());
+            else next.delete("area");
             next.set("budget", budget);
             return next;
           });
+          setAreaHistory(saveAreaHistory(area));
           setSearched(true);
         }}
       >
@@ -143,18 +153,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           <MapPin size={20} />
           <div>
             <span>{t("エリア")}</span>
-            <select
-              aria-label={t("エリア")}
-              value={area}
-              onChange={(e) => setArea(e.target.value)}
-            >
-              <option value="">{t("すべてのエリア")}</option>
-              {AREAS.map((a) => (
-                <option key={a} value={a}>
-                  {t(a)}
-                </option>
-              ))}
-            </select>
+            <AreaCombobox value={area} onChange={setArea} history={areaHistory} />
           </div>
         </label>
         <label>

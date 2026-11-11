@@ -222,6 +222,38 @@ describe("match score without exclusion", () => {
     expect(result.filteredCount).toBe(1);
     expect(result.matches).toHaveLength(1);
   });
+  it("searches by area name, station name or area plus station", () => {
+    const count = (q: string) =>
+      matchRestaurants(data.restaurants, [member], q, Infinity).matches.length;
+    const all = count("");
+    expect(count("渋谷")).toBeGreaterThan(0);
+    expect(count("渋谷")).toBeLessThan(all);
+    expect(count("渋谷駅")).toBeGreaterThan(0);
+    expect(count("渋谷駅")).toBeLessThanOrEqual(count("渋谷"));
+    expect(count("渋谷 神泉駅")).toBeLessThanOrEqual(count("渋谷"));
+    expect(count("渋谷　渋谷駅")).toBe(count("渋谷駅"));
+    expect(count("存在しない駅")).toBe(0);
+  });
+  it("matches free-text disliked ingredients by partial name", () => {
+    expect(
+      scoreMenu(menu, { ...member, dislikedIngredients: ["トマトソース"] }, "和食")
+        .score,
+    ).toBe(30);
+    expect(
+      scoreMenu(menu, { ...member, dislikedIngredients: ["ほうれん草"] }, "和食")
+        .score,
+    ).toBe(50);
+  });
+  it("treats a free-text allergy as unconfirmed at stores", () => {
+    const [m] = matchRestaurants(
+      [safeStore("x")],
+      [{ ...member, allergies: ["キウイ"] }],
+      "",
+      Infinity,
+    ).matches;
+    expect(m.warnings[0]).toContain("未確認");
+    expect(m.score).toBeLessThanOrEqual(75);
+  });
   it("supports budget ranges with a lower bound and an open upper bound", () => {
     const all = (range: { min: number; max?: number }) =>
       matchRestaurants(data.restaurants, [member], "", range).matches;

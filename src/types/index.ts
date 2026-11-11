@@ -54,6 +54,8 @@ export interface Restaurant {
   id: string;
   name: string;
   area: string;
+  /** 最寄り駅（未設定の古いデータはエリアの代表駅として扱う） */
+  station?: string;
   cuisine: string;
   price: number;
   description: string;
