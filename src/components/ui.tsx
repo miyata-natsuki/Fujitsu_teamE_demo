@@ -566,7 +566,7 @@ export function RestaurantCard({
             </div>
           </details>
         </div>
-        {groupId &&
+        {onSelect &&
           (decide ?? (
             <button className="card-decide" onClick={onSelect}>
               {t("このお店に決定")}

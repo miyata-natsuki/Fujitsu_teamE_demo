@@ -1,3 +1,4 @@
+import { PERSONAL_GROUP_ID } from "../lib/personalGroup";
 import { useLocale } from "../hooks/useLocale";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -20,7 +21,8 @@ export function GroupList() {
   const { t } = useLocale();
   const { data } = useStore();
   const [query, setQuery] = useState("");
-  const groups = [...data.groups]
+  const groups = data.groups
+    .filter((g) => g.id !== PERSONAL_GROUP_ID)
     .reverse()
     .filter((g) =>
       `${g.name} ${g.members.map((m) => m.nickname).join(" ")}`

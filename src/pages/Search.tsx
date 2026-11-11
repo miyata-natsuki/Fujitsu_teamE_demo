@@ -22,6 +22,7 @@ import {
 import { useStore } from "../hooks/useStore";
 import { ForceDecideButton } from "../components/ForceDecideButton";
 import {
+  AREAS,
   BUDGET_RANGES,
   BADGES,
   ACCOMMODATION_ITEMS,
@@ -30,12 +31,8 @@ import {
   budgetLabel,
 } from "../data/constants";
 import { matchRestaurants } from "../lib/matching";
+import { PERSONAL_GROUP_ID, withPersonalDecision } from "../lib/personalGroup";
 import { RestaurantCard, Notice, Empty } from "../components/ui";
-import {
-  AreaCombobox,
-  loadAreaHistory,
-  saveAreaHistory,
-} from "../components/AreaCombobox";
 const cuisineIcons = [
   Fish,
   Utensils,
@@ -57,7 +54,8 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
   const personal =
     params.get("mode") === "personal" ||
     (!params.get("mode") && !params.get("group"));
-  const selectedGroup = params.get("group") || data.groups[0]?.id;
+  const groups = data.groups.filter((g) => g.id !== PERSONAL_GROUP_ID);
+  const selectedGroup = params.get("group") || groups[0]?.id;
   const group = data.groups.find((g) => g.id === selectedGroup);
   const members = personal ? [data.profile] : (group?.members ?? []);
   const [area, setArea] = useState(params.get("area") ?? "");
@@ -74,7 +72,6 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
     });
   const [cuisine, setCuisine] = useState("");
   const [searched, setSearched] = useState(false);
-  const [areaHistory, setAreaHistory] = useState(loadAreaHistory);
   const appliedArea = params.get("area") ?? "";
   const budgetParam = params.get("budget") || "all";
   // "all" は価格帯を指定しない（すべての価格帯を表示）
@@ -95,6 +92,12 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
   );
   const allergies = [...new Set(members.flatMap((m) => m.allergies))];
   const choose = (id: string) => {
+    if (personal) {
+      // ひとりで探した場合も、決定して予約へ進める
+      if (update((d) => withPersonalDecision(d, id)))
+        navigate(`/groups/${PERSONAL_GROUP_ID}/decision`);
+      return;
+    }
     if (!group) return;
     if (
       update((d) => ({
@@ -145,7 +148,6 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
             next.set("budget", budget);
             return next;
           });
-          setAreaHistory(saveAreaHistory(area));
           setSearched(true);
         }}
       >
@@ -153,7 +155,18 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           <MapPin size={20} />
           <div>
             <span>{t("エリア")}</span>
-            <AreaCombobox value={area} onChange={setArea} history={areaHistory} />
+            <select
+              aria-label={t("エリア")}
+              value={area}
+              onChange={(e) => setArea(e.target.value)}
+            >
+              <option value="">{t("すべてのエリア")}</option>
+              {AREAS.map((a) => (
+                <option key={a} value={a}>
+                  {t(a)}
+                </option>
+              ))}
+            </select>
           </div>
         </label>
         <label>
@@ -198,7 +211,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
               <option value={PERSONAL}>
                 {t("ひとり")}（{data.profile.nickname}）
               </option>
-              {data.groups.map((g) => (
+              {groups.map((g) => (
                 <option value={g.id} key={g.id}>
                   {g.name}
                   {t("·")}

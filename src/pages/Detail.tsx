@@ -18,6 +18,7 @@ import {
 import { useStore } from "../hooks/useStore";
 import { allergenLabel } from "../data/constants";
 import { matchRestaurants } from "../lib/matching";
+import { PERSONAL_GROUP_ID, withPersonalDecision } from "../lib/personalGroup";
 import { ForceDecideButton } from "../components/ForceDecideButton";
 import { ReservationSection } from "../components/ReservationSection";
 import {
@@ -44,7 +45,12 @@ export default function Detail() {
   const result = matchRestaurants([r], members, "", Infinity);
   const match = result.matches[0];
   const choose = () => {
-    if (!group) return;
+    if (!group) {
+      // ひとりで見ている場合も、決定して予約へ進める
+      if (update((d) => withPersonalDecision(d, r.id)))
+        navigate(`/groups/${PERSONAL_GROUP_ID}/decision`);
+      return;
+    }
     if (
       update((d) => ({
         ...d,
@@ -281,23 +287,22 @@ export default function Detail() {
                 </div>
                 <MatchSafety match={match} />
                 <Recommendations match={match} />
-                {group ? (
-                  match.warnings.length > 0 ? (
-                    <ForceDecideButton
-                      name={r.name}
-                      reasons={match.warnings}
-                      onConfirm={() => choose()}
-                    />
-                  ) : (
-                    <button
-                      className="button primary full-width"
-                      onClick={() => choose()}
-                    >
-                      {t("このお店に決定")}
-                    </button>
-                  )
+                {match.warnings.length > 0 ? (
+                  <ForceDecideButton
+                    name={r.name}
+                    reasons={match.warnings}
+                    onConfirm={() => choose()}
+                  />
                 ) : (
-                  <Link className="button primary full-width" to="/groups/new">
+                  <button
+                    className="button primary full-width"
+                    onClick={() => choose()}
+                  >
+                    {t("このお店に決定")}
+                  </button>
+                )}
+                {!group && (
+                  <Link className="text-link small" to="/groups/new">
                     {t("グループを作って探す")}
                   </Link>
                 )}
@@ -326,12 +331,23 @@ export function Decision() {
   if (!group || !r)
     return (
       <Empty title={t("お店がまだ決まっていません")}>
-        <Link className="text-link" to={group ? `/search?group=${id}` : "/"}>
+        <Link
+          className="text-link"
+          to={
+            group
+              ? id === PERSONAL_GROUP_ID
+                ? "/search?mode=personal"
+                : `/search?group=${id}`
+              : "/"
+          }
+        >
           {t("候補のお店を探す")}
         </Link>
       </Empty>
     );
   const match = matchRestaurants([r], group.members, "", Infinity).matches[0];
+  const searchUrl =
+    id === PERSONAL_GROUP_ID ? "/search?mode=personal" : `/search?group=${id}`;
   return (
     <div className="decision-page">
       <div className="decision-top">
@@ -401,7 +417,7 @@ export function Decision() {
         </Link>
         <Link
           className="button primary"
-          to={`/search?group=${id}`}
+          to={searchUrl}
           onClick={() =>
             update((d) => ({
               ...d,
