@@ -349,7 +349,7 @@ export const TRANSLATIONS: Record<string, readonly [string, string, string]> = {
     "（再次点击可更改）",
     "(다시 누르면 변경할 수 있습니다)",
   ],
-  先に上の段階を選んでください。: [
+  "先に上の段階を選んでください。": [
     "Please choose the step above first.",
     "请先选择上一级。",
     "먼저 위 단계를 선택하세요.",
