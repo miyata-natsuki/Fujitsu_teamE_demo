@@ -5,7 +5,7 @@ import type {
   UserProfile,
   MockReceipt,
 } from "../types";
-import { ALLERGENS, AREA_STATIONS } from "./constants";
+import { ALLERGENS, AREA_STATIONS, cityOfArea } from "./constants";
 export const photo = (name: string) =>
   `${import.meta.env.BASE_URL}images/${name}.jpg`;
 const profile = (
@@ -326,6 +326,8 @@ export function createRestaurants(): Restaurant[] {
         id: `r${index + 1}`,
         name,
         area,
+        prefecture: "東京都",
+        city: cityOfArea(area),
         station: AREA_STATIONS[area]?.[index % 3],
         cuisine,
         price,

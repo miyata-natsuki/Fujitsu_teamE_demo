@@ -10,18 +10,27 @@ import {
   AREA_STATIONS,
   allergenLabel,
 } from "../data/constants";
+import { restaurantLocation, type AreaSelection } from "./areaSelection";
 /**
- * エリア名・駅名・住所での検索。空白で区切った語がすべて含まれるお店が対象。
- * 例：「渋谷」「渋谷駅」「渋谷 神泉」。空なら全エリア。
+ * エリアでの絞り込み。県 → 市 → 駅の選択（AreaSelection）は、選んだところまでが一致するお店が対象。
+ * 文字列の場合は、エリア名・駅名・住所に空白区切りの語がすべて含まれるお店が対象。
+ * 何も選んでいない（空）場合は全エリア。
  */
-export function areaMatches(restaurant: Restaurant, query: string) {
-  const words = query.split(/[\s　]+/).filter(Boolean);
+export function areaMatches(restaurant: Restaurant, query: string | AreaSelection) {
+  if (typeof query !== "string") {
+    const loc = restaurantLocation(restaurant);
+    return (
+      (!query.prefecture || loc.prefecture === query.prefecture) &&
+      (!query.city || loc.city === query.city) &&
+      (!query.station || loc.station === query.station)
+    );
+  }
+  const words = query.split(/[\s\u3000]+/).filter(Boolean);
   if (!words.length) return true;
   const station = restaurant.station ?? AREA_STATIONS[restaurant.area]?.[0] ?? "";
   const text = `${restaurant.area} ${station} ${restaurant.address}`;
   return words.every((w) => text.includes(w));
-}
-export function allergyImpact(restaurant: Restaurant, members: UserProfile[]) {
+}export function allergyImpact(restaurant: Restaurant, members: UserProfile[]) {
   const allergies = [...new Set(members.flatMap((member) => member.allergies))];
   const menus = restaurant.menus.map((menu) => ({
     menu,
@@ -110,7 +119,7 @@ export function requestedFit(restaurant: Restaurant, wants: SearchWants) {
 export function matchRestaurants(
   restaurants: Restaurant[],
   members: UserProfile[],
-  area: string,
+  area: string | AreaSelection,
   budget: number | BudgetRange,
   wants: SearchWants = { badges: [], accommodations: [] },
 ) {

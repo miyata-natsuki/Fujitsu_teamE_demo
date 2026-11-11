@@ -234,6 +234,26 @@ describe("match score without exclusion", () => {
     expect(count("渋谷　渋谷駅")).toBe(count("渋谷駅"));
     expect(count("存在しない駅")).toBe(0);
   });
+  it("narrows by prefecture → city → station and applies only what was selected", () => {
+    const count = (sel: {
+      prefecture?: string;
+      city?: string;
+      station?: string;
+    }) => matchRestaurants(data.restaurants, [member], sel, Infinity).matches.length;
+    const all = count({});
+    expect(count({ prefecture: "東京都" })).toBe(all);
+    const shibuya = count({ prefecture: "東京都", city: "渋谷区" });
+    expect(shibuya).toBeGreaterThan(0);
+    expect(shibuya).toBeLessThan(all);
+    const station = count({
+      prefecture: "東京都",
+      city: "渋谷区",
+      station: "渋谷駅",
+    });
+    expect(station).toBeGreaterThan(0);
+    expect(station).toBeLessThanOrEqual(shibuya);
+    expect(count({ prefecture: "大阪府" })).toBe(0);
+  });
   it("matches free-text disliked ingredients by partial name", () => {
     expect(
       scoreMenu(menu, { ...member, dislikedIngredients: ["トマトソース"] }, "和食")

@@ -14,6 +14,8 @@ import {
 import {
   ALLERGENS,
   AREAS,
+  AREA_STATIONS,
+  cityOfArea,
   CUISINES,
   INGREDIENTS,
   STATUS_LABELS,
@@ -78,6 +80,9 @@ const newRestaurant = (): Restaurant => ({
   id: crypto.randomUUID(),
   name: "季節の食卓 こもれび（デモ）",
   area: "渋谷",
+  prefecture: "東京都",
+  city: "渋谷区",
+  station: "渋谷駅",
   cuisine: "和食",
   price: 2500,
   description: "旬の野菜を中心に、ゆっくり食事を楽しめる架空のお店です。",
@@ -363,11 +368,32 @@ export default function RestaurantForm() {
                 {t("エリア")}
                 <select
                   value={r.area}
-                  onChange={(e) => set("area", e.target.value)}
+                  onChange={(e) =>
+                    setR((p) => ({
+                      ...p,
+                      area: e.target.value,
+                      prefecture: "東京都",
+                      city: cityOfArea(e.target.value),
+                      station: AREA_STATIONS[e.target.value]?.[0],
+                    }))
+                  }
                 >
                   {AREAS.map((a) => (
                     <option key={a} value={a}>
                       {t(a)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                {t("最寄り駅")}
+                <select
+                  value={r.station ?? AREA_STATIONS[r.area]?.[0] ?? ""}
+                  onChange={(e) => set("station", e.target.value)}
+                >
+                  {(AREA_STATIONS[r.area] ?? []).map((st) => (
+                    <option key={st} value={st}>
+                      {t(st)}
                     </option>
                   ))}
                 </select>

@@ -22,7 +22,6 @@ import {
 import { useStore } from "../hooks/useStore";
 import { ForceDecideButton } from "../components/ForceDecideButton";
 import {
-  AREAS,
   BUDGET_RANGES,
   BADGES,
   ACCOMMODATION_ITEMS,
@@ -32,6 +31,15 @@ import {
 } from "../data/constants";
 import { matchRestaurants } from "../lib/matching";
 import { PERSONAL_GROUP_ID, withPersonalDecision } from "../lib/personalGroup";
+import { AreaPanel } from "../components/AreaPanel";
+import {
+  areaFromParams,
+  areaSelectionLabel,
+  areaToParams,
+  isEmptyArea,
+  loadAreaHistory,
+  saveAreaHistory,
+} from "../lib/areaSelection";
 import { RestaurantCard, Notice, Empty } from "../components/ui";
 const cuisineIcons = [
   Fish,
@@ -58,7 +66,8 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
   const selectedGroup = params.get("group") || groups[0]?.id;
   const group = data.groups.find((g) => g.id === selectedGroup);
   const members = personal ? [data.profile] : (group?.members ?? []);
-  const [area, setArea] = useState(params.get("area") ?? "");
+  const [areaOpen, setAreaOpen] = useState(false);
+  const [areaHistory, setAreaHistory] = useState(loadAreaHistory);
   const [budget, setBudget] = useState(params.get("budget") || "all");
   const list = (key: string) => params.get(key)?.split(",").filter(Boolean) ?? [];
   const toggleWant = (key: "badges" | "accom", v: string) =>
@@ -72,7 +81,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
     });
   const [cuisine, setCuisine] = useState("");
   const [searched, setSearched] = useState(false);
-  const appliedArea = params.get("area") ?? "";
+  const appliedArea = areaFromParams(params);
   const budgetParam = params.get("budget") || "all";
   // "all" は価格帯を指定しない（すべての価格帯を表示）
   const appliedRange =
@@ -143,8 +152,6 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           e.preventDefault();
           setParams((p) => {
             const next = new URLSearchParams(p);
-            if (area.trim()) next.set("area", area.trim());
-            else next.delete("area");
             next.set("budget", budget);
             return next;
           });
@@ -155,18 +162,18 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           <MapPin size={20} />
           <div>
             <span>{t("エリア")}</span>
-            <select
+            <button
+              type="button"
+              className="area-trigger"
+              aria-haspopup="dialog"
               aria-label={t("エリア")}
-              value={area}
-              onChange={(e) => setArea(e.target.value)}
+              onClick={() => setAreaOpen(true)}
             >
-              <option value="">{t("すべてのエリア")}</option>
-              {AREAS.map((a) => (
-                <option key={a} value={a}>
-                  {t(a)}
-                </option>
-              ))}
-            </select>
+              {isEmptyArea(appliedArea)
+                ? t("すべてのエリア")
+                : areaSelectionLabel(appliedArea)}
+              <ChevronDown size={14} />
+            </button>
           </div>
         </label>
         <label>
@@ -227,6 +234,20 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           {t("お店を探す")}
         </button>
       </form>
+      {areaOpen && (
+        <AreaPanel
+          value={appliedArea}
+          history={areaHistory}
+          onClose={() => setAreaOpen(false)}
+          onApply={(sel) => {
+            setParams((p) => areaToParams(new URLSearchParams(p), sel));
+            setAreaHistory(saveAreaHistory(sel));
+            setCuisine("");
+            setSearched(true);
+            setAreaOpen(false);
+          }}
+        />
+      )}
       <details className="excluded-section" open={wants.badges.length + wants.accommodations.length > 0}>
         <summary>
           <span>
@@ -331,7 +352,9 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
               </span>
             </h2>
             <p>
-              {t(appliedArea || "すべてのエリア")}
+              {isEmptyArea(appliedArea)
+                ? t("すべてのエリア")
+                : areaSelectionLabel(appliedArea)}
               {t("·")}
               {t(appliedRange ? budgetLabel(appliedRange) : "すべての価格帯")}
               {t(" · マッチ度の高い順（除外はせず、すべて表示）")}
