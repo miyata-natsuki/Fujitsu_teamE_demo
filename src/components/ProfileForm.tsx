@@ -9,6 +9,7 @@ export const blankProfile = (): UserProfile => ({
   id: crypto.randomUUID(),
   nickname: "",
   allergies: [],
+  allergyNote: "",
   dislikedIngredients: [],
   likedCuisines: [],
   dislikedCuisines: [],
@@ -92,6 +93,20 @@ export function ProfileForm({
               onChange={(v) => set("allergies", v)}
               allowCustom
             />
+            <label className="field">
+              {t("アレルギーについての補足（自由記述）")}
+              <textarea
+                rows={3}
+                maxLength={300}
+                value={profile.allergyNote ?? ""}
+                placeholder={t(
+                  "例：加熱すれば食べられます／少量なら大丈夫です／調理器具を分けてほしいです",
+                )}
+                onChange={(e) =>
+                  setProfile((p) => ({ ...p, allergyNote: e.target.value }))
+                }
+              />
+            </label>
             <p className="small muted">
               {t("選択なしは「登録なし」として扱います。")}
               {t(

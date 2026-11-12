@@ -1,3 +1,4 @@
+import { JAPAN_LOCATIONS } from "./locations";
 export const ALLERGENS = [
   ["egg", "卵"],
   ["milk", "乳"],
@@ -69,20 +70,24 @@ export const AREA_STATIONS: Record<string, string[]> = {
   新宿: ["新宿駅", "新宿三丁目駅", "西新宿駅"],
   池袋: ["池袋駅", "大塚駅", "目白駅"],
 };
-/** 県 → 市（区） → 駅（デモは東京都のみ）。area は店舗データのエリア名。 */
+/** デモの店舗データがある市（区）と、店舗データのエリア名の対応 */
+const DEMO_CITY_AREA: Record<string, string> = {
+  渋谷区: "渋谷",
+  新宿区: "新宿",
+  豊島区: "池袋",
+};
+/** 県 → 市（区） → 駅。area は店舗データのエリア名（デモの店舗がある市区のみ）。 */
 export const LOCATIONS: {
   prefecture: string;
-  cities: { name: string; area: string; stations: string[] }[];
-}[] = [
-  {
-    prefecture: "東京都",
-    cities: [
-      { name: "渋谷区", area: "渋谷", stations: AREA_STATIONS["渋谷"] },
-      { name: "新宿区", area: "新宿", stations: AREA_STATIONS["新宿"] },
-      { name: "豊島区", area: "池袋", stations: AREA_STATIONS["池袋"] },
-    ],
-  },
-];
+  cities: { name: string; area?: string; stations: string[] }[];
+}[] = JAPAN_LOCATIONS.map(([prefecture, cities]) => ({
+  prefecture,
+  cities: cities.map(([name, stations]) => ({
+    name,
+    area: DEMO_CITY_AREA[name],
+    stations,
+  })),
+}));
 export const cityOfArea = (area: string) =>
   LOCATIONS.flatMap((l) => l.cities).find((c) => c.area === area)?.name;
 /** 予算の範囲（max なしは「〜円以上」） */

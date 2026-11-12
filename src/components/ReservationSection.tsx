@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocale } from "../hooks/useLocale";
 import { useStore } from "../hooks/useStore";
+import { allergenLabel } from "../data/constants";
 import type { Group, Restaurant } from "../types";
 /** 決定したお店のデモ予約。店舗への実際の連絡は行わず、ブラウザ内に保存するだけ。 */
 export function ReservationSection({
@@ -56,6 +57,22 @@ export function ReservationSection({
   return (
     <section className="form-card">
       <h2>{t("予約する")}</h2>
+      <div className="contact-note">
+        <strong>{t("お店に伝えるアレルギー情報")}</strong>
+        <ul>
+          {group.members.map((m) => (
+            <li key={m.id}>
+              {m.nickname}：
+              {m.allergies.length
+                ? m.allergies.map((a) => t(allergenLabel(a))).join("・")
+                : t("登録なし")}
+              {m.allergyNote?.trim() && (
+                <span className="small muted"> — {m.allergyNote.trim()}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
       {saved && !editing ? (
         <>
           <p>

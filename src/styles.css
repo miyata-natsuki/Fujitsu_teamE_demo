@@ -3370,3 +3370,54 @@ html[lang="en"] .mini-steps {
     flex: 1 1 auto;
   }
 }
+.area-level-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.area-level-head .text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.area-level-head .text-link:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.area-filter {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border: 1px solid #e6e7df;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+}
+.area-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.area-clear {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border: 0;
+  border-radius: 50%;
+  background: #eceee6;
+  color: #5c655d;
+  cursor: pointer;
+}
+.area-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.area-row .area-trigger {
+  flex: 1;
+  min-width: 0;
+}

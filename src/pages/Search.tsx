@@ -18,6 +18,7 @@ import {
   Leaf,
   Check,
   Plus,
+  X,
 } from "lucide-react";
 import { useStore } from "../hooks/useStore";
 import { ForceDecideButton } from "../components/ForceDecideButton";
@@ -162,6 +163,7 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
           <MapPin size={20} />
           <div>
             <span>{t("エリア")}</span>
+            <div className="area-row">
             <button
               type="button"
               className="area-trigger"
@@ -174,6 +176,20 @@ export default function SearchPage({ home = false }: { home?: boolean }) {
                 : areaSelectionLabel(appliedArea)}
               <ChevronDown size={14} />
             </button>
+            {!isEmptyArea(appliedArea) && (
+              <button
+                type="button"
+                className="area-clear"
+                aria-label={t("エリアの選択をクリア")}
+                onClick={() => {
+                  setParams((p) => areaToParams(new URLSearchParams(p), {}));
+                  setSearched(true);
+                }}
+              >
+                <X size={13} />
+              </button>
+            )}
+            </div>
           </div>
         </label>
         <label>

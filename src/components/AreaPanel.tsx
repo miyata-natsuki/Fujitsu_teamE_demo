@@ -29,7 +29,9 @@ export function AreaPanel({
   const [level, setLevel] = useState(
     value.city ? 2 : value.prefecture ? 1 : 0,
   );
+  const [filter, setFilter] = useState("");
   const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => setFilter(""), [level]);
   useEffect(() => {
     panelRef.current?.focus();
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -38,13 +40,24 @@ export function AreaPanel({
   }, [onClose]);
   const prefecture = LOCATIONS.find((l) => l.prefecture === sel.prefecture);
   const city = prefecture?.cities.find((c) => c.name === sel.city);
-  const items: string[] =
+  const allItems: string[] =
     level === 0
       ? LOCATIONS.map((l) => l.prefecture)
       : level === 1
         ? (prefecture?.cities.map((c) => c.name) ?? [])
         : (city?.stations ?? []);
+  const q = filter.trim();
+  const items = q ? allItems.filter((n) => n.includes(q)) : allItems;
   const current = [sel.prefecture, sel.city, sel.station][level];
+  // この段階の選択と、それより下の段階の選択をクリアする
+  const clearLevel = () =>
+    setSel(
+      level === 0
+        ? {}
+        : level === 1
+          ? { prefecture: sel.prefecture }
+          : { prefecture: sel.prefecture, city: sel.city },
+    );
   const pick = (name: string) => {
     if (level === 0) {
       setSel(sel.prefecture === name ? sel : { prefecture: name });
@@ -133,12 +146,28 @@ export function AreaPanel({
             <b>{sel.station ? t(sel.station) : t("指定しない")}</b>
           </button>
         </nav>
-        <h3 className="area-level-title">
-          {t(`${LEVELS[level]}を選ぶ`)}
-          {crumbs[level] && (
-            <small>{t("（もう一度押すと選択を変更できます）")}</small>
-          )}
-        </h3>
+        <div className="area-level-head">
+          <h3 className="area-level-title">{t(`${LEVELS[level]}を選ぶ`)}</h3>
+          <button
+            type="button"
+            className="text-link small"
+            disabled={!crumbs.slice(level).some(Boolean)}
+            onClick={clearLevel}
+          >
+            <X size={14} />
+            {t(`${LEVELS[level]}の選択をクリア`)}
+          </button>
+        </div>
+        {allItems.length > 6 && (
+          <input
+            className="area-filter"
+            aria-label={t("名前で絞り込み")}
+            placeholder={t("名前で絞り込み")}
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+          />
+        )}
         <ul className="area-list">
           {items.map((name) => (
             <li key={name}>
@@ -158,7 +187,13 @@ export function AreaPanel({
             </li>
           ))}
           {!items.length && (
-            <li className="muted small">{t("先に上の段階を選んでください。")}</li>
+            <li className="muted small">
+              {t(
+                allItems.length
+                  ? "該当する候補がありません。"
+                  : "先に上の段階を選んでください。",
+              )}
+            </li>
           )}
         </ul>
         <footer>

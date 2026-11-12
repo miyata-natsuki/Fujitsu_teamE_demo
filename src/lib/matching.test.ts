@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialData, createRestaurants } from "../data/seed";
-import { ALLERGENS } from "../data/constants";
+import { ALLERGENS, AREA_STATIONS, LOCATIONS } from "../data/constants";
 import {
   allergyImpact,
   matchRestaurants,
@@ -253,6 +253,18 @@ describe("match score without exclusion", () => {
     expect(station).toBeGreaterThan(0);
     expect(station).toBeLessThanOrEqual(shibuya);
     expect(count({ prefecture: "大阪府" })).toBe(0);
+  });
+  it("offers all 47 prefectures with cities and stations, including the demo areas", () => {
+    expect(LOCATIONS).toHaveLength(47);
+    expect(new Set(LOCATIONS.map((l) => l.prefecture)).size).toBe(47);
+    for (const l of LOCATIONS)
+      for (const c of l.cities) expect(c.stations.length).toBeGreaterThan(0);
+    const tokyo = LOCATIONS.find((l) => l.prefecture === "東京都")!;
+    for (const [area, stations] of Object.entries(AREA_STATIONS)) {
+      const city = tokyo.cities.find((c) => c.area === area);
+      expect(city).toBeDefined();
+      for (const s of stations) expect(city!.stations).toContain(s);
+    }
   });
   it("matches free-text disliked ingredients by partial name", () => {
     expect(

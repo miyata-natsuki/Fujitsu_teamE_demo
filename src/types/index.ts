@@ -3,6 +3,8 @@ export interface UserProfile {
   id: string;
   nickname: string;
   allergies: string[];
+  /** アレルギーについての自由記述（店舗へ伝える想定） */
+  allergyNote?: string;
   dislikedIngredients: string[];
   likedCuisines: string[];
   dislikedCuisines: string[];
