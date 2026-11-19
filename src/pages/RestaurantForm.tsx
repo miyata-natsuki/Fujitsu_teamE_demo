@@ -65,6 +65,35 @@ const steps = [
   "バッジ",
   "登録",
 ];
+/** サンプルのメニュー表（ヴィーガンカフェ）の読み取り結果。画像から読み取れる料理名と説明をもとにした固定データ */
+const SAMPLE_MENU_DETAILS: Record<
+  string,
+  { description: string; ingredients: string[]; allergens: string[] }
+> = {
+  ハーブ香るローストポテト: {
+    description:
+      "じゃがいもを香ばしくローストし、タイムやローズマリーなどのハーブでやさしく仕上げました。",
+    ingredients: ["じゃがいも"],
+    allergens: [],
+  },
+  彩り野菜とトマトソースの雑穀プレート: {
+    description:
+      "雑穀のごはんに、旬の野菜をたっぷりのせ、トマトソースで仕上げた、彩り豊かな一皿です。",
+    ingredients: ["野菜", "トマト", "なす", "ピーマン", "にんじん"],
+    allergens: [],
+  },
+  植物性パティと雑穀のプレート: {
+    description:
+      "大豆などの植物性パティに、雑穀、葉野菜、グリル野菜を合わせた、食べ応えのあるヘルシープレートです。",
+    ingredients: ["大豆", "野菜", "ブロッコリー", "ピーマン", "にんじん"],
+    allergens: ["soy"],
+  },
+};
+const SAMPLE_MENU_TEXT = [
+  "ハーブ香るローストポテト 1200円",
+  "彩り野菜とトマトソースの雑穀プレート 1500円",
+  "植物性パティと雑穀のプレート 1600円",
+].join("\n");
 const newMenu = (): MenuItem => ({
   id: crypto.randomUUID(),
   name: "季節の野菜プレート",
@@ -178,13 +207,20 @@ export default function RestaurantForm() {
       if (menus.length)
         setR((p) => ({
           ...p,
-          menus: menus.map((m) => ({
-            ...newMenu(),
-            ...m,
-            description:
-              "メニュー表からの読み取り候補。原材料は別途確認してください。",
-            allergenReviewStatus: "unconfirmed",
-          })),
+          menus: menus.map((m) => {
+            const known = sample ? SAMPLE_MENU_DETAILS[m.name] : undefined;
+            return {
+              ...newMenu(),
+              ...m,
+              ...(known
+                ? { ingredients: known.ingredients, allergens: known.allergens }
+                : {}),
+              description:
+                known?.description ??
+                "メニュー表からの読み取り候補。原材料は別途確認してください。",
+              allergenReviewStatus: "unconfirmed" as const,
+            };
+          }),
         }));
     }
     return extracted.length;
@@ -201,7 +237,7 @@ export default function RestaurantForm() {
         text =
           documentType === "receipt"
             ? MOCK_RECEIPT.products.map((p) => p.name).join("\n")
-            : "季節の野菜プレート 1500円\n牛肉と玉ねぎのステーキ 2200円\nえびとトマトのパスタ 1800円";
+            : SAMPLE_MENU_TEXT;
       } else {
         const { createWorker } = await import("tesseract.js");
         if (!mounted.current || token !== job.current) return;
@@ -567,7 +603,7 @@ export default function RestaurantForm() {
                   setReceipt(
                     documentType === "receipt"
                       ? MOCK_RECEIPT.image
-                      : `${import.meta.env.BASE_URL}images/menu-sample.svg`,
+                      : `${import.meta.env.BASE_URL}images/menu-sample-vegan.webp`,
                   );
                   setFilename(
                     documentType === "receipt"
