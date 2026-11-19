@@ -991,6 +991,7 @@ export default function RestaurantForm() {
                       ]),
                     ]}
                     selected={m.ingredients}
+                    allowCustom
                     onChange={(ingredients) =>
                       menuSet(m.id, {
                         ingredients,
