@@ -57,11 +57,13 @@ export function parseFoodText(text: string): ExtractedProduct[] {
       const candidates = ALLERGENS.filter(([id]) =>
         aliases[id].some((a) => normalize(name).includes(normalize(a))),
       ).map(([id]) => id);
-      const ingredient =
-        INGREDIENTS.find((i) => normalize(name).includes(normalize(i))) ??
-        (candidates.length
+      // 読み取れた食材はすべて「、」区切りで入れる
+      const found = menuIngredients(name);
+      const ingredient = found.length
+        ? found.join("、")
+        : candidates.length
           ? ALLERGENS.find(([id]) => id === candidates[0])![1]
-          : "未特定");
+          : "未特定";
       return {
         name,
         ingredient,
@@ -71,6 +73,12 @@ export function parseFoodText(text: string): ExtractedProduct[] {
       };
     });
 }
+/** 「、」「,」区切りの食材名を配列にする（「未特定」は除く） */
+export const splitIngredients = (text: string) =>
+  text
+    .split(/[、,，]/)
+    .map((s) => s.trim())
+    .filter((s) => s && s !== "未特定");
 function menuIngredients(text: string) {
   let remaining = normalize(text);
   const found = new Set<string>();

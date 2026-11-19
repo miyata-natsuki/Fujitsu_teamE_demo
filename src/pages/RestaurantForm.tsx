@@ -42,6 +42,7 @@ import { useStore } from "../hooks/useStore";
 import {
   parseFoodText,
   parseMenuText,
+  splitIngredients,
   foodSearchMatch,
   type ExtractedProduct,
 } from "../lib/foodInput";
@@ -200,7 +201,11 @@ export default function RestaurantForm() {
     setOcrText("");
   };
   const applyText = (text: string) => {
-    const extracted = parseFoodText(text);
+    const extracted = parseFoodText(text).map((p) => {
+      const known =
+        sample && documentType === "menu" ? SAMPLE_MENU_DETAILS[p.name] : undefined;
+      return known ? { ...p, ingredient: known.ingredients.join("、") } : p;
+    });
     setProducts(extracted);
     if (documentType === "menu") {
       const menus = parseMenuText(text);
@@ -776,11 +781,26 @@ export default function RestaurantForm() {
                       />
                     </label>
                     <label className="field">
-                      {t("食材名")}
+                      {t("食材名（複数は「、」で区切る）")}
                       <input
                         value={p.ingredient}
-                        maxLength={40}
-                        onChange={(e) =>
+                        maxLength={120}
+                        onChange={(e) => {
+                          // メニュー表の場合は、同じ名前のメニューの使用食材にも反映する
+                          if (documentType === "menu")
+                            setR((prev) => ({
+                              ...prev,
+                              menus: prev.menus.map((m) =>
+                                m.name === p.name
+                                  ? {
+                                      ...m,
+                                      ingredients: splitIngredients(
+                                        e.target.value,
+                                      ),
+                                    }
+                                  : m,
+                              ),
+                            }));
                           setProducts((ps) =>
                             ps.map((x, j) =>
                               i === j
@@ -791,8 +811,8 @@ export default function RestaurantForm() {
                                   }
                                 : x,
                             ),
-                          )
-                        }
+                          );
+                        }}
                       />
                     </label>
                     <button
@@ -806,7 +826,11 @@ export default function RestaurantForm() {
                     </button>
                     <span className="small muted">
                       {t("メニューに紐付ける食材：")}
-                      {t(p.ingredient)}
+                      {splitIngredients(p.ingredient).length
+                        ? splitIngredients(p.ingredient)
+                            .map((i) => t(i))
+                            .join("、")
+                        : t("未特定")}
                     </span>
                     <IngredientPicker
                       label={t("アレルギー食材")}
@@ -1023,7 +1047,7 @@ export default function RestaurantForm() {
                         ...INGREDIENTS,
                         ...products
                           .filter((p) => p.confirmed)
-                          .map((p) => p.ingredient),
+                          .flatMap((p) => splitIngredients(p.ingredient)),
                       ]),
                     ]}
                     selected={m.ingredients}

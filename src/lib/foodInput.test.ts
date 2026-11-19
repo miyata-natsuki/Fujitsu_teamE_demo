@@ -27,6 +27,10 @@ describe("食材検索とOCR候補", () => {
     expect(parseMenuText("玉ねぎとねぎのスープ 500円")[0].ingredients).toEqual(["玉ねぎ", "ねぎ"]);
     expect(m[1].allergens).toEqual(expect.arrayContaining(["shrimp", "wheat"]));
   });
+  it("読み取れた使用食材をすべて紐付け候補に入れる", () => {
+    const [p] = parseFoodText("牛肉と玉ねぎとトマトのステーキ");
+    expect(p.ingredient).toBe("牛肉、トマト、玉ねぎ");
+  });
   it("価格なし・空文字・大量入力にも対応する", () => {
     expect(parseMenuText("野菜プレート")[0].price).toBe(1500);
     expect(parseFoodText("")).toEqual([]);
