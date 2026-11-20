@@ -1,10 +1,10 @@
 import { useLocale } from "../hooks/useLocale";
-import { useState } from "react";
 import { ShieldCheck, Leaf, Check } from "lucide-react";
 import type { UserProfile } from "../types";
 import { ALLERGENS, INGREDIENTS, CUISINES } from "../data/constants";
 import { Tags, SelectionActions } from "./ui";
 import { IngredientPicker } from "./IngredientPicker";
+import { clearDraft, resumeDraft, useDraftState } from "../hooks/useDraft";
 export const blankProfile = (): UserProfile => ({
   id: crypto.randomUUID(),
   nickname: "",
@@ -18,16 +18,23 @@ export function ProfileForm({
   initial,
   onSave,
   submitLabel = "プロフィールを保存",
+  draftKey,
 }: {
   initial?: UserProfile;
+  /** 入力途中の内容を保存するキー（未指定なら、編集対象または「新規」ごと） */
+  draftKey?: string;
   onSave: (profile: UserProfile) => void;
   submitLabel?: string;
 }) {
   const { t } = useLocale();
-  const [profile, setProfile] = useState<UserProfile>(
-    initial ? structuredClone(initial) : blankProfile,
+  const base = draftKey ?? `profile:${initial?.id ?? "new"}`;
+  const startProfile = () => (initial ? structuredClone(initial) : blankProfile());
+  const [profile, setProfile] = useDraftState<UserProfile>(
+    base,
+    "profile",
+    startProfile,
   );
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useDraftState(base, "step", () => 0);
   const set = (key: keyof UserProfile, value: string[]) =>
     setProfile((p) => {
       const next = { ...p, [key]: value };
@@ -47,7 +54,10 @@ export function ProfileForm({
       onSubmit={(e) => {
         e.preventDefault();
         if (step === 0) setStep(1);
-        else onSave({ ...profile, nickname: profile.nickname.trim() });
+        else {
+          onSave({ ...profile, nickname: profile.nickname.trim() });
+          clearDraft(base);
+        }
       }}
     >
       <div className="mini-steps">
@@ -162,6 +172,21 @@ export function ProfileForm({
           </p>
         </>
       )}
+      <p className="small muted">
+        {t("入力中の内容は、登録が完了するまで自動で保存されます。")}{" "}
+        <button
+          type="button"
+          className="text-link small"
+          onClick={() => {
+            clearDraft(base);
+            resumeDraft(base);
+            setProfile(startProfile());
+            setStep(0);
+          }}
+        >
+          {t("入力内容を破棄")}
+        </button>
+      </p>
       <div className="form-actions">
         {step === 1 && (
           <button

@@ -209,6 +209,7 @@ export function JoinGroup() {
       </div>
       <div className="form-card">
         <ProfileForm
+          draftKey={`profile:join:${id}`}
           onSave={(profile) => {
             if (
               update((d) => {
@@ -421,6 +422,7 @@ export function GroupManagement() {
           <ProfileForm
             key={editing === "new" ? "new" : editing.id}
             initial={editing === "new" ? undefined : editing}
+            draftKey={editing === "new" ? `profile:add:${id}` : undefined}
             onSave={save}
           />
         </Modal>

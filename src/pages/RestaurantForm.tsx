@@ -56,6 +56,7 @@ import {
   yen,
 } from "../components/ui";
 import { IngredientPicker } from "../components/IngredientPicker";
+import { clearDraft, resumeDraft, useDraftState } from "../hooks/useDraft";
 import { PhotoUpload } from "../components/PhotoUpload";
 const steps = [
   "基本情報",
@@ -136,27 +137,35 @@ export default function RestaurantForm() {
   const { data, update } = useStore();
   const existing = data.restaurants.find((r) => r.id === id);
   const navigate = useNavigate();
-  const [r, setR] = useState<Restaurant>(() =>
-    existing ? structuredClone(existing) : newRestaurant(),
-  );
-  const [step, setStep] = useState(0);
+  // 入力途中の内容は、登録が完了するまで保存しておく
+  const draft = `restaurant:${id ?? "new"}`;
+  const startRestaurant = () =>
+    existing ? structuredClone(existing) : newRestaurant();
+  const [r, setR] = useDraftState<Restaurant>(draft, "r", startRestaurant);
+  const [step, setStep] = useDraftState(draft, "step", () => 0);
   const [uploadingPhotos, setUploadingPhotos] = useState(0);
   const photoBusy = (busy: boolean) =>
     setUploadingPhotos((count) => count + (busy ? 1 : -1));
   const [allergenQuery, setAllergenQuery] = useState("");
   const [receipt, setReceipt] = useState("");
-  const [filename, setFilename] = useState("");
+  const [filename, setFilename] = useDraftState(draft, "filename", () => "");
   const [reading, setReading] = useState(false);
-  const [read, setRead] = useState(false);
+  const [read, setRead] = useDraftState(draft, "read", () => false);
   const [error, setError] = useState("");
-  const [products, setProducts] = useState<ExtractedProduct[]>([]);
-  const [documentType, setDocumentType] = useState<"receipt" | "menu">(
-    "receipt",
+  const [products, setProducts] = useDraftState<ExtractedProduct[]>(
+    draft,
+    "products",
+    () => [],
   );
-  const [sample, setSample] = useState(false);
-  const [ocrText, setOcrText] = useState("");
+  const [documentType, setDocumentType] = useDraftState<"receipt" | "menu">(
+    draft,
+    "documentType",
+    () => "receipt",
+  );
+  const [sample, setSample] = useDraftState(draft, "sample", () => false);
+  const [ocrText, setOcrText] = useDraftState(draft, "ocrText", () => "");
   const [progress, setProgress] = useState(0);
-  const [accepted, setAccepted] = useState(false);
+  const [accepted, setAccepted] = useDraftState(draft, "accepted", () => false);
   const workerRef = useRef<Worker | null>(null);
   const mounted = useRef(true);
   const job = useRef(0);
@@ -343,8 +352,26 @@ export default function RestaurantForm() {
           ? d.restaurants.map((store) => (store.id === id ? normalized : store))
           : [...d.restaurants, normalized],
       }))
-    )
+    ) {
+      clearDraft(draft);
       navigate(`/restaurants/${r.id}`);
+    }
+  };
+  const discardDraft = () => {
+    clearDraft(draft);
+    resumeDraft(draft);
+    setR(startRestaurant());
+    setStep(0);
+    setFilename("");
+    setRead(false);
+    setProducts([]);
+    setDocumentType("receipt");
+    setSample(false);
+    setOcrText("");
+    setAccepted(false);
+    setReceipt("");
+    setError("");
+    window.scrollTo(0, 0);
   };
   return (
     <div className="registration-page">
@@ -355,6 +382,12 @@ export default function RestaurantForm() {
         <div className="eyebrow">{t("FOR RESTAURANTS")}</div>
         <h1>{t(id ? "店舗情報を編集" : "お店の魅力と、食材の情報を。")}</h1>
         <p>{t("デモ用の店舗情報を登録します。ログインは不要です。")}</p>
+        <p className="small muted">
+          {t("入力中の内容は、登録が完了するまで自動で保存されます。")}{" "}
+          <button type="button" className="text-link small" onClick={discardDraft}>
+            {t("入力内容を破棄")}
+          </button>
+        </p>
       </div>
       <ol className="registration-steps">
         {steps.map((s, i) => (
