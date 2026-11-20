@@ -90,12 +90,53 @@ const SAMPLE_MENU_DETAILS: Record<
     ingredients: ["大豆", "野菜", "ブロッコリー", "ピーマン", "にんじん"],
     allergens: ["soy"],
   },
+  // サンプルのメニュー表（洋食の店 ひだまり）
+  チキンステーキ: {
+    description:
+      "香ばしく焼き上げたジューシーな鶏もも肉に、季節の野菜とポテトサラダを添えて。",
+    ingredients: ["鶏肉", "野菜", "じゃがいも", "にんじん", "ピーマン", "なす"],
+    allergens: [],
+  },
+  海老とブロッコリーのグラタン: {
+    description:
+      "ぷりっとした海老とブロッコリーを、クリーミーなホワイトソースで焼き上げました。",
+    ingredients: ["えび", "ブロッコリー", "牛乳", "チーズ"],
+    allergens: ["shrimp", "milk", "wheat"],
+  },
+  オムライス: {
+    description: "ふわとろの卵で包んだ、やさしい味わいの定番メニューです。",
+    ingredients: ["卵", "米", "トマト", "野菜"],
+    allergens: ["egg"],
+  },
+  卵とハムのガレット: {
+    description:
+      "そば粉の香ばしい生地に、卵とハム、きのこをのせて焼き上げました。",
+    ingredients: ["そば", "卵", "豚肉", "きのこ"],
+    allergens: ["egg", "buckwheat"],
+  },
 };
-const SAMPLE_MENU_TEXT = [
-  "ハーブ香るローストポテト 1200円",
-  "彩り野菜とトマトソースの雑穀プレート 1500円",
-  "植物性パティと雑穀のプレート 1600円",
-].join("\n");
+/** 画像にない価格は、サンプル用に仮の金額を入れている */
+const SAMPLE_MENUS = [
+  {
+    label: "サンプルメニュー表（ヴィーガンカフェ）",
+    image: "images/menu-sample-vegan.webp",
+    text: [
+      "ハーブ香るローストポテト 1200円",
+      "彩り野菜とトマトソースの雑穀プレート 1500円",
+      "植物性パティと雑穀のプレート 1600円",
+    ].join("\n"),
+  },
+  {
+    label: "サンプルメニュー表（洋食の店）",
+    image: "images/menu-sample-western.webp",
+    text: [
+      "チキンステーキ 1400円",
+      "海老とブロッコリーのグラタン 1600円",
+      "オムライス 1200円",
+      "卵とハムのガレット 1300円",
+    ].join("\n"),
+  },
+];
 const newMenu = (): MenuItem => ({
   id: crypto.randomUUID(),
   name: "季節の野菜プレート",
@@ -163,6 +204,7 @@ export default function RestaurantForm() {
     () => "receipt",
   );
   const [sample, setSample] = useDraftState(draft, "sample", () => false);
+  const [sampleMenu, setSampleMenu] = useDraftState(draft, "sampleMenu", () => 0);
   const [ocrText, setOcrText] = useDraftState(draft, "ocrText", () => "");
   const [progress, setProgress] = useState(0);
   const [accepted, setAccepted] = useDraftState(draft, "accepted", () => false);
@@ -251,7 +293,7 @@ export default function RestaurantForm() {
         text =
           documentType === "receipt"
             ? MOCK_RECEIPT.products.map((p) => p.name).join("\n")
-            : SAMPLE_MENU_TEXT;
+            : SAMPLE_MENUS[sampleMenu]?.text ?? SAMPLE_MENUS[0].text;
       } else {
         const { createWorker } = await import("tesseract.js");
         if (!mounted.current || token !== job.current) return;
@@ -632,32 +674,34 @@ export default function RestaurantForm() {
               />
             </label>
             <div className="receipt-actions">
-              <button
-                type="button"
-                className="button secondary"
-                disabled={reading}
-                onClick={() => {
-                  setSample(true);
-                  setReceipt(
-                    documentType === "receipt"
-                      ? MOCK_RECEIPT.image
-                      : `${import.meta.env.BASE_URL}images/menu-sample-vegan.webp`,
-                  );
-                  setFilename(
-                    documentType === "receipt"
-                      ? "サンプルレシート"
-                      : "サンプルメニュー表",
-                  );
-                  setRead(false);
-                  setProducts([]);
-                  setOcrText("");
-                  setError("");
-                }}
-              >
-                {t("サンプル")}
-                {t(documentType === "receipt" ? "レシート" : "メニュー表")}
-                {t("を使う")}
-              </button>
+              {(documentType === "receipt"
+                ? [{ label: "サンプルレシート", image: "", text: "" }]
+                : SAMPLE_MENUS
+              ).map((sm, index) => (
+                <button
+                  type="button"
+                  className="button secondary"
+                  key={sm.label}
+                  disabled={reading}
+                  onClick={() => {
+                    setSample(true);
+                    setSampleMenu(index);
+                    setReceipt(
+                      documentType === "receipt"
+                        ? MOCK_RECEIPT.image
+                        : `${import.meta.env.BASE_URL}${sm.image}`,
+                    );
+                    setFilename(sm.label);
+                    setRead(false);
+                    setProducts([]);
+                    setOcrText("");
+                    setError("");
+                  }}
+                >
+                  {t(sm.label)}
+                  {t("を使う")}
+                </button>
+              ))}
               {t(
                 receipt && (
                   <button
